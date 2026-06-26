@@ -373,7 +373,7 @@
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────────
 // Pega aquí la URL de tu Web App después de publicarla en Apps Script
-https://script.google.com/macros/s/AKfycbwYL2KycrqC8OiW_9Tkqc8RtwN2tQHLtsc2hRufnPkcNpe8XMY7hMf7ucFvJ8YHec_n/exec
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwYL2KycrqC8OiW_9Tkqc8RtwN2tQHLtsc2hRufnPkcNpe8XMY7hMf7ucFvJ8YHec_n/exec';
 
 const PASOS = [
   'Redacción de borrador de escritura',
@@ -414,9 +414,14 @@ let ticketActivo = null;
 
 // ── API ────────────────────────────────────────────────────────
 async function api(action, body = {}) {
-  const res = await fetch(WEBAPP_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action, ...body })
+  const params = new URLSearchParams({ action, ...body });
+  // Serializar arrays como JSON string
+  Object.keys(body).forEach(k => {
+    if (typeof body[k] === 'object') params.set(k, JSON.stringify(body[k]));
+  });
+  const res = await fetch(`${WEBAPP_URL}?${params.toString()}`, {
+    method: 'GET',
+    redirect: 'follow'
   });
   return res.json();
 }
