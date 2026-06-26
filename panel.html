@@ -1,389 +1,16 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IureCo — Panel de Expedientes</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap');
+// ================================================================
+// IURECO — Web App v2
+// Pegar en: Google Sheets → Extensiones → Apps Script
+// Publicar como: Web App → Cualquier persona
+// ================================================================
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --navy:    #1A2744;
-    --navy2:   #243460;
-    --gold:    #C8A84B;
-    --gold-l:  #F0E0A0;
-    --bg:      #F4F3EF;
-    --white:   #FFFFFF;
-    --muted:   #6B6B5E;
-    --border:  #E2DED4;
-    --green:   #25D366;
-    --red:     #C0392B;
-    --amber:   #E67E22;
-    --blue:    #2980B9;
-    --teal:    #16A085;
-    --gray:    #95A5A6;
-  }
-
-  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--navy); min-height: 100vh; }
-
-  /* ── HEADER ── */
-  header {
-    background: var(--navy);
-    padding: 0 1.5rem;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .logo { color: #fff; font-weight: 700; font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; }
-  .logo span { color: var(--gold); }
-  .header-right { display: flex; align-items: center; gap: 0.75rem; }
-  #search-input {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 8px;
-    padding: 0.4rem 0.75rem;
-    color: #fff;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
-    width: 200px;
-    outline: none;
-  }
-  #search-input::placeholder { color: rgba(255,255,255,0.5); }
-  #search-input:focus { border-color: var(--gold); }
-  .btn-refresh {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 8px;
-    color: #fff;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-  }
-  .btn-refresh:hover { background: rgba(255,255,255,0.2); }
-
-  /* ── LAYOUT ── */
-  .main { display: flex; height: calc(100vh - 56px); }
-
-  /* ── LISTA ── */
-  .sidebar {
-    width: 320px;
-    min-width: 280px;
-    background: var(--white);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
-  .sidebar-header {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  #total-badge {
-    background: var(--navy);
-    color: #fff;
-    border-radius: 12px;
-    padding: 0.1rem 0.5rem;
-    font-size: 0.72rem;
-  }
-
-  .exp-item {
-    padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.1s;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .exp-item:hover { background: #F9F8F5; }
-  .exp-item.active { background: #EEF1F8; border-left: 3px solid var(--navy); }
-
-  .exp-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--navy);
-    color: var(--gold-l);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-  }
-  .exp-info { flex: 1; min-width: 0; }
-  .exp-nombre { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .exp-ticket { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); }
-  .exp-status { flex-shrink: 0; }
-
-  /* ── DETAIL ── */
-  .detail {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1.5rem;
-  }
-  .detail-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--muted);
-    gap: 0.5rem;
-  }
-  .detail-empty svg { opacity: 0.3; }
-
-  .detail-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-  .detail-title { font-size: 1.25rem; font-weight: 700; }
-  .detail-ticket { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem; }
-  .detail-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-
-  /* ── BUTTONS ── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: opacity 0.15s;
-    text-decoration: none;
-  }
-  .btn:active { opacity: 0.8; }
-  .btn-wa   { background: var(--green); color: #fff; }
-  .btn-navy { background: var(--navy); color: #fff; }
-  .btn-outline { background: none; border: 1px solid var(--border); color: var(--navy); }
-  .btn-red  { background: var(--red); color: #fff; }
-  .btn-gold { background: var(--gold); color: var(--navy); font-weight: 700; }
-
-  /* ── CARDS ── */
-  .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-  @media (max-width: 700px) { .cards-grid { grid-template-columns: 1fr; } }
-
-  .card {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.25rem;
-  }
-  .card-title {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin-bottom: 1rem;
-  }
-
-  /* ── ESTATUS ── */
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0.25rem 0.65rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
-
-  .status-select {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    color: var(--navy);
-    background: var(--white);
-    margin-top: 0.5rem;
-    cursor: pointer;
-  }
-
-  /* ── PASOS ── */
-  .pasos-list { list-style: none; }
-  .paso-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-  }
-  .paso-item:last-child { border-bottom: none; }
-  .paso-num {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.72rem;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-  .paso-num.done  { background: var(--teal); color: #fff; }
-  .paso-num.curr  { background: var(--navy); color: var(--gold-l); }
-  .paso-num.pend  { background: var(--border); color: var(--muted); }
-  .paso-label { font-size: 0.88rem; flex: 1; }
-  .paso-label.done { text-decoration: line-through; color: var(--muted); }
-  .paso-label.curr { font-weight: 600; }
-
-  /* ── REQUISITOS ── */
-  .req-list { list-style: none; }
-  .req-item {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.45rem 0;
-    font-size: 0.85rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .req-item:last-child { border-bottom: none; }
-  .req-check {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: var(--red);
-    flex-shrink: 0;
-  }
-  .req-label.falta { color: var(--red); font-weight: 500; }
-
-  /* ── NOTAS ── */
-  .notas-area {
-    width: 100%;
-    min-height: 80px;
-    padding: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    color: var(--navy);
-    resize: vertical;
-    margin-top: 0.5rem;
-  }
-  .notas-area:focus { outline: none; border-color: var(--navy); }
-
-  /* ── WHATSAPP INPUT ── */
-  .wa-input-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-  .wa-input {
-    flex: 1;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    color: var(--navy);
-  }
-  .wa-input:focus { outline: none; border-color: var(--navy); }
-
-  /* ── PAGO ── */
-  .pago-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
-  .pago-badge {
-    padding: 0.3rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-weight: 600;
-  }
-  .pago-si  { background: #D4EDDA; color: #155724; }
-  .pago-no  { background: #FFF3CD; color: #856404; }
-
-  /* ── LOADING ── */
-  .loading { text-align: center; padding: 3rem; color: var(--muted); }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 3px solid var(--border);
-    border-top-color: var(--navy);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 1rem;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── TOAST ── */
-  #toast {
-    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
-    background: var(--navy); color: #fff;
-    padding: 0.6rem 1.25rem; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 500;
-    opacity: 0; transition: opacity 0.3s;
-    pointer-events: none; z-index: 999;
-  }
-  #toast.show { opacity: 1; }
-</style>
-</head>
-<body>
-
-<header>
-  <div class="logo">Iure<span>Co</span> <span style="color:rgba(255,255,255,0.4);font-weight:400;font-size:0.8rem;margin-left:0.5rem;">Expedientes</span></div>
-  <div class="header-right">
-    <input type="text" id="search-input" placeholder="Buscar cliente o ticket…" oninput="filtrarExpedientes()">
-    <button class="btn-refresh" onclick="cargarExpedientes()">↺ Actualizar</button>
-  </div>
-</header>
-
-<div class="main">
-  <!-- LISTA -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      Expedientes
-      <span id="total-badge">0</span>
-    </div>
-    <div id="lista-expedientes">
-      <div class="loading"><div class="spinner"></div>Cargando…</div>
-    </div>
-  </div>
-
-  <!-- DETALLE -->
-  <div class="detail" id="detail-panel">
-    <div class="detail-empty">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <p>Selecciona un expediente</p>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<script>
-// ── CONFIGURACIÓN ──────────────────────────────────────────────
-// Pega aquí la URL de tu Web App después de publicarla en Apps Script
-const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwYL2KycrqC8OiW_9Tkqc8RtwN2tQHLtsc2hRufnPkcNpe8XMY7hMf7ucFvJ8YHec_n/exec';
-
-const PASOS = [
-  'Redacción de borrador de escritura',
-  'Impresión y firma de escritura pública',
-  'Preparación de documentación',
-  'Subida a Registro Mercantil',
-  'Seguimiento del proceso',
-  'Descarga de patentes',
-  'Entrega de documentación'
-];
+const SHEET_CONFIG = {
+  FORM_RESPONSES: 'Respuestas de formulario 1',
+  CONTROL_SHEET:  'Control',
+  PAGOS_SHEET:    'Pagos',
+  GASTOS_SHEET:   'Gastos',
+  TICKET_PREFIX:  'IUR',
+};
 
 const REQUISITOS = [
   'Tres nombres tentativos de la sociedad',
@@ -401,317 +28,368 @@ const REQUISITOS = [
   'Boleta de anticipo'
 ];
 
-const STATUS_COLORS = {
-  'Pendiente revisión':    { bg: '#FFF3CD', color: '#856404', dot: '#F0AD4E' },
-  'Corrección solicitada': { bg: '#F8D7DA', color: '#721C24', dot: '#C0392B' },
-  'Documentación completa':{ bg: '#D4EDDA', color: '#155724', dot: '#27AE60' },
-  'En trámite':            { bg: '#D1ECF1', color: '#0C5460', dot: '#2980B9' },
-  'Entregado':             { bg: '#E2E3E5', color: '#383D41', dot: '#95A5A6' },
-};
+const PASOS_TRAMITE = [
+  'Redacción de borrador de escritura',
+  'Impresión y firma de escritura pública',
+  'Preparación de documentación',
+  'Subida a Registro Mercantil',
+  'Seguimiento del proceso',
+  'Descarga de patentes',
+  'Entrega de documentación'
+];
 
-let expedientes = [];
-let ticketActivo = null;
+// ================================================================
+// ROUTER
+// ================================================================
+function doGet(e) { return handleRequest(e); }
+function doPost(e) { return handleRequest(e); }
 
-// ── API ────────────────────────────────────────────────────────
-async function api(action, body = {}) {
-  const params = new URLSearchParams({ action, ...body });
-  // Serializar arrays como JSON string
-  Object.keys(body).forEach(k => {
-    if (typeof body[k] === 'object') params.set(k, JSON.stringify(body[k]));
+function handleRequest(e) {
+  const params = e.parameter || {};
+  const action = params.action || '';
+  const body = {};
+  Object.keys(params).forEach(k => {
+    try { body[k] = JSON.parse(params[k]); }
+    catch(err) { body[k] = params[k]; }
   });
-  const res = await fetch(`${WEBAPP_URL}?${params.toString()}`, {
-    method: 'GET',
-    redirect: 'follow'
-  });
-  return res.json();
-}
 
-// ── CARGAR LISTA ───────────────────────────────────────────────
-async function cargarExpedientes() {
-  document.getElementById('lista-expedientes').innerHTML =
-    '<div class="loading"><div class="spinner"></div>Cargando…</div>';
+  let result;
   try {
-    const data = await api('getExpedientes');
-    expedientes = data.expedientes || [];
-    renderLista(expedientes);
-  } catch(e) {
-    document.getElementById('lista-expedientes').innerHTML =
-      '<div class="loading">⚠️ No se pudo conectar.<br>Verifica la URL del Web App.</div>';
+    switch (action) {
+      case 'getExpedientes':   result = getExpedientes();             break;
+      case 'getExpediente':    result = getExpediente(body.ticket);   break;
+      case 'updateEstatus':    result = updateEstatus(body);          break;
+      case 'updatePaso':       result = updatePaso(body);             break;
+      case 'updateNotas':      result = updateNotas(body);            break;
+      case 'marcarFaltantes':  result = marcarFaltantes(body);        break;
+      case 'generarFormCorr':  result = generarFormCorreccion(body);  break;
+      case 'agregarWhatsApp':  result = agregarWhatsApp(body);        break;
+      case 'agregarPago':      result = agregarPago(body);            break;
+      case 'confirmarEntrega': result = confirmarEntrega(body);       break;
+      case 'getPagos':         result = getPagos(body.ticket);        break;
+      case 'agregarGasto':     result = agregarGasto(body);           break;
+      case 'getGastos':        result = getGastos(body.ticket);       break;
+      case 'getResumenFinanciero': result = getResumenFinanciero(body.ticket); break;
+      default: result = { error: 'Acción no reconocida: ' + action };
+    }
+  } catch (err) {
+    result = { error: err.message };
   }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-function renderLista(lista) {
-  const el = document.getElementById('lista-expedientes');
-  document.getElementById('total-badge').textContent = lista.length;
-  if (!lista.length) { el.innerHTML = '<div class="loading">Sin expedientes</div>'; return; }
+// ================================================================
+// HELPERS
+// ================================================================
+function getSSS() { return SpreadsheetApp.getActiveSpreadsheet(); }
 
-  el.innerHTML = lista.map(e => {
-    const inicial = (e['Cliente'] || '?')[0].toUpperCase();
-    const estatus = e['Estatus'] || 'Pendiente revisión';
-    const sc = STATUS_COLORS[estatus] || STATUS_COLORS['Pendiente revisión'];
-    return `
-    <div class="exp-item ${e['Ticket'] === ticketActivo ? 'active' : ''}"
-         onclick="abrirExpediente('${e['Ticket']}')">
-      <div class="exp-avatar">${inicial}</div>
-      <div class="exp-info">
-        <div class="exp-nombre">${e['Cliente'] || 'Sin nombre'}</div>
-        <div class="exp-ticket">${e['Ticket']} · ${e['Fecha Ingreso'] || ''}</div>
-      </div>
-      <div class="exp-status">
-        <span class="status-badge" style="background:${sc.bg};color:${sc.color}">
-          <span class="status-dot" style="background:${sc.dot}"></span>
-          ${estatus}
-        </span>
-      </div>
-    </div>`;
-  }).join('');
+function updateField(ticket, campo, valor) {
+  const ss   = getSSS();
+  const ctrl = ss.getSheetByName(SHEET_CONFIG.CONTROL_SHEET);
+  const data = ctrl.getDataRange().getValues();
+  const headers = data[0];
+  const col = headers.indexOf(campo);
+  if (col < 0) return { error: 'Campo no encontrado: ' + campo };
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === ticket) {
+      ctrl.getRange(i + 1, col + 1).setValue(valor);
+      return { ok: true };
+    }
+  }
+  return { error: 'Ticket no encontrado' };
 }
 
-function filtrarExpedientes() {
-  const q = document.getElementById('search-input').value.toLowerCase();
-  const filtrados = expedientes.filter(e =>
-    (e['Cliente'] || '').toLowerCase().includes(q) ||
-    (e['Ticket'] || '').toLowerCase().includes(q)
-  );
-  renderLista(filtrados);
+function getRowByTicket(sheetName, ticket) {
+  const ss   = getSSS();
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return null;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === ticket) return { row: i + 1, data: data[i], headers: data[0] };
+  }
+  return null;
 }
 
-// ── ABRIR EXPEDIENTE ───────────────────────────────────────────
-async function abrirExpediente(ticket) {
-  ticketActivo = ticket;
-  renderLista(expedientes.filter(e => {
-    const q = document.getElementById('search-input').value.toLowerCase();
-    return !q || (e['Cliente']||'').toLowerCase().includes(q) || (e['Ticket']||'').toLowerCase().includes(q);
-  }));
+// ================================================================
+// INICIALIZAR HOJAS
+// ================================================================
+function asegurarHojas() {
+  const ss = getSSS();
 
-  document.getElementById('detail-panel').innerHTML =
-    '<div class="loading"><div class="spinner"></div>Cargando expediente…</div>';
+  // Hoja Control
+  let ctrl = ss.getSheetByName(SHEET_CONFIG.CONTROL_SHEET);
+  if (!ctrl) {
+    ctrl = ss.insertSheet(SHEET_CONFIG.CONTROL_SHEET);
+    const headers = [
+      'Ticket','Cliente','WhatsApp','Fecha Ingreso','Estatus',
+      'Paso Actual','Anticipo Confirmado','Entrega Confirmada','Notas','Link Form Corrección'
+    ].concat(REQUISITOS.map(r => 'FALTA: ' + r));
+    ctrl.getRange(1,1,1,headers.length).setValues([headers]);
+    ctrl.getRange(1,1,1,headers.length).setBackground('#1A2744').setFontColor('#FFFFFF').setFontWeight('bold');
+    ctrl.setFrozenRows(1);
+  }
 
-  const data = await api('getExpediente', { ticket });
-  if (data.error) { toast('Error: ' + data.error); return; }
-  renderDetalle(data.expediente);
+  // Hoja Pagos
+  let pagos = ss.getSheetByName(SHEET_CONFIG.PAGOS_SHEET);
+  if (!pagos) {
+    pagos = ss.insertSheet(SHEET_CONFIG.PAGOS_SHEET);
+    pagos.getRange(1,1,1,5).setValues([['Ticket','Cliente','Tipo','Monto (Q)','Fecha']]);
+    pagos.getRange(1,1,1,5).setBackground('#1A2744').setFontColor('#FFFFFF').setFontWeight('bold');
+    pagos.setFrozenRows(1);
+  }
+
+  // Hoja Gastos
+  let gastos = ss.getSheetByName(SHEET_CONFIG.GASTOS_SHEET);
+  if (!gastos) {
+    gastos = ss.insertSheet(SHEET_CONFIG.GASTOS_SHEET);
+    gastos.getRange(1,1,1,5).setValues([['Ticket','Cliente','Descripción','Monto (Q)','Fecha']]);
+    gastos.getRange(1,1,1,5).setBackground('#1A2744').setFontColor('#FFFFFF').setFontWeight('bold');
+    gastos.setFrozenRows(1);
+  }
+
+  return { ctrl, pagos, gastos };
 }
 
-// ── RENDERIZAR DETALLE ─────────────────────────────────────────
-function renderDetalle(exp) {
-  const ticket  = exp['Ticket'];
-  const nombre  = exp['Cliente'] || 'Sin nombre';
-  const wa      = exp['WhatsApp'] || '';
-  const estatus = exp['Estatus'] || 'Pendiente revisión';
-  const pasoAct = exp['Paso Actual'] || '';
-  const notas   = exp['Notas'] || '';
-  const pagoAnt = exp['Pago Anticipo'] || 'No';
-  const pagoEnt = exp['Pago Entrega'] || 'No';
-  const linkForm = exp['Link Form Corrección'] || '';
-  const sc = STATUS_COLORS[estatus] || STATUS_COLORS['Pendiente revisión'];
-
-  // Calcular índice del paso actual
-  const pasoIdx = PASOS.indexOf(pasoAct);
-
-  // Faltantes
-  const faltantes = REQUISITOS.filter(r => exp['FALTA: ' + r] === true || exp['FALTA: ' + r] === 'TRUE');
-
-  document.getElementById('detail-panel').innerHTML = `
-    <div class="detail-header">
-      <div>
-        <div class="detail-title">${nombre}</div>
-        <div class="detail-ticket">${ticket} · Ingreso: ${exp['Fecha Ingreso'] || '—'}</div>
-      </div>
-      <div class="detail-actions">
-        ${wa ? `<a class="btn btn-wa" href="https://wa.me/${wa}" target="_blank">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-          WhatsApp
-        </a>` : `<button class="btn btn-outline" onclick="mostrarInputWA('${ticket}')">+ Agregar WhatsApp</button>`}
-        <button class="btn btn-navy" onclick="guardarNotas('${ticket}')">Guardar notas</button>
-      </div>
-    </div>
-
-    ${!wa ? `
-    <div id="wa-input-box" class="card" style="margin-bottom:1rem;display:none">
-      <div class="card-title">Número de WhatsApp del cliente</div>
-      <div class="wa-input-row">
-        <input class="wa-input" id="wa-num-input" placeholder="502XXXXXXXX (con código de país)" type="tel">
-        <button class="btn btn-navy" onclick="guardarWA('${ticket}')">Guardar</button>
-      </div>
-    </div>` : ''}
-
-    <div class="cards-grid">
-
-      <!-- Estatus -->
-      <div class="card">
-        <div class="card-title">Estatus del expediente</div>
-        <span class="status-badge" style="background:${sc.bg};color:${sc.color}">
-          <span class="status-dot" style="background:${sc.dot}"></span>${estatus}
-        </span>
-        <select class="status-select" onchange="cambiarEstatus('${ticket}', this.value)">
-          <option value="">— Cambiar estatus —</option>
-          <option>Pendiente revisión</option>
-          <option>Corrección solicitada</option>
-          <option>Documentación completa</option>
-          <option>En trámite</option>
-          <option>Entregado</option>
-        </select>
-      </div>
-
-      <!-- Pagos -->
-      <div class="card">
-        <div class="card-title">Pagos</div>
-        <div class="pago-row">
-          <span style="font-size:0.85rem">Anticipo:</span>
-          <span class="pago-badge ${pagoAnt !== 'No' ? 'pago-si' : 'pago-no'}">${pagoAnt !== 'No' ? '✓ Confirmado' : 'Pendiente'}</span>
-        </div>
-        <div class="pago-row" style="margin-top:0.5rem">
-          <span style="font-size:0.85rem">Contra entrega:</span>
-          <span class="pago-badge ${pagoEnt !== 'No' ? 'pago-si' : 'pago-no'}">${pagoEnt !== 'No' ? '✓ ' + pagoEnt : 'Pendiente'}</span>
-          ${pagoEnt === 'No' ? `<button class="btn btn-gold" style="padding:0.3rem 0.65rem;font-size:0.78rem" onclick="confirmarPago('${ticket}')">Confirmar pago</button>` : ''}
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Pasos del trámite -->
-    <div class="card" style="margin-bottom:1rem">
-      <div class="card-title">Pasos del trámite</div>
-      <ul class="pasos-list">
-        ${PASOS.map((p, i) => {
-          const estado = i < pasoIdx ? 'done' : i === pasoIdx ? 'curr' : 'pend';
-          return `<li class="paso-item" onclick="avanzarPaso('${ticket}', ${i})">
-            <div class="paso-num ${estado}">${i < pasoIdx ? '✓' : i + 1}</div>
-            <div class="paso-label ${estado}">${p}</div>
-            ${i === pasoIdx ? '<span style="font-size:0.72rem;color:var(--navy);font-weight:600">← Actual</span>' : ''}
-          </li>`;
-        }).join('')}
-      </ul>
-    </div>
-
-    <!-- Documentos faltantes -->
-    <div class="card" style="margin-bottom:1rem">
-      <div class="card-title">Documentos — marcar faltantes</div>
-      <ul class="req-list" id="req-list-${ticket}">
-        ${REQUISITOS.map(r => {
-          const falta = faltantes.includes(r);
-          return `<li class="req-item">
-            <input type="checkbox" class="req-check" ${falta ? 'checked' : ''}
-              onchange="toggleFaltante('${ticket}', '${r}', this.checked)">
-            <span class="req-label ${falta ? 'falta' : ''}">${r}</span>
-          </li>`;
-        }).join('')}
-      </ul>
-      <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap">
-        <button class="btn btn-red" onclick="generarFormCorreccion('${ticket}')">
-          Generar form de corrección
-        </button>
-        ${linkForm ? `<a class="btn btn-outline" href="${linkForm}" target="_blank">Ver form generado</a>` : ''}
-      </div>
-    </div>
-
-    <!-- Notas internas -->
-    <div class="card">
-      <div class="card-title">Notas internas del equipo</div>
-      <textarea class="notas-area" id="notas-${ticket}" placeholder="Anotaciones internas sobre este expediente…">${notas}</textarea>
-    </div>
-  `;
-
-  // Mostrar input WA si no hay número
-  if (!wa) setTimeout(() => mostrarInputWA(ticket), 100);
+// ================================================================
+// EXPEDIENTES
+// ================================================================
+function getExpedientes() {
+  const ss   = getSSS();
+  const ctrl = ss.getSheetByName(SHEET_CONFIG.CONTROL_SHEET);
+  if (!ctrl) return { expedientes: [] };
+  const data    = ctrl.getDataRange().getValues();
+  const headers = data[0];
+  const expedientes = data.slice(1)
+    .filter(r => r[0] !== '')
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = r[i]);
+      return obj;
+    });
+  return { expedientes };
 }
 
-// ── ACCIONES ───────────────────────────────────────────────────
-async function cambiarEstatus(ticket, estatus) {
-  if (!estatus) return;
-  await api('updateEstatus', { ticket, estatus });
-  toast('Estatus actualizado');
-  await cargarExpedientes();
-  abrirExpediente(ticket);
+function getExpediente(ticket) {
+  const ss   = getSSS();
+  const ctrl = ss.getSheetByName(SHEET_CONFIG.CONTROL_SHEET);
+  const data = ctrl.getDataRange().getValues();
+  const headers = data[0];
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === ticket) {
+      const obj = {};
+      headers.forEach((h, idx) => obj[h] = data[i][idx]);
+      return { expediente: obj, row: i + 1 };
+    }
+  }
+  return { error: 'Ticket no encontrado' };
 }
 
-async function avanzarPaso(ticket, idx) {
-  const paso = PASOS[idx];
-  await api('updatePaso', { ticket, paso });
-  toast('Paso actualizado: ' + paso);
-  abrirExpediente(ticket);
+function updateEstatus(body) { return updateField(body.ticket, 'Estatus', body.estatus); }
+function updatePaso(body)    { return updateField(body.ticket, 'Paso Actual', body.paso); }
+function updateNotas(body)   { return updateField(body.ticket, 'Notas', body.notas); }
+function agregarWhatsApp(body) { return updateField(body.ticket, 'WhatsApp', body.whatsapp); }
+
+// ================================================================
+// PAGOS
+// ================================================================
+function agregarPago(body) {
+  const { ticket, tipo, monto } = body; // tipo: 'Anticipo' | 'Contra entrega'
+  const ss    = getSSS();
+  const { pagos } = asegurarHojas();
+
+  // Buscar nombre del cliente
+  const expData = getExpediente(ticket);
+  const cliente = expData.expediente ? expData.expediente['Cliente'] : '';
+
+  pagos.appendRow([ticket, cliente, tipo, parseFloat(monto) || 0, new Date().toLocaleDateString('es-GT')]);
+
+  // Si es anticipo, marcar anticipo confirmado en Control
+  if (tipo === 'Anticipo') {
+    updateField(ticket, 'Anticipo Confirmado', 'Sí');
+    updateField(ticket, 'Estatus', 'Expediente en operación');
+  }
+
+  return { ok: true };
 }
 
-async function guardarNotas(ticket) {
-  const notas = document.getElementById('notas-' + ticket)?.value || '';
-  await api('updateNotas', { ticket, notas });
-  toast('Notas guardadas');
+function confirmarEntrega(body) {
+  const { ticket, monto } = body;
+  const ss = getSSS();
+  const { pagos } = asegurarHojas();
+
+  const expData = getExpediente(ticket);
+  const cliente = expData.expediente ? expData.expediente['Cliente'] : '';
+
+  pagos.appendRow([ticket, cliente, 'Contra entrega', parseFloat(monto) || 0, new Date().toLocaleDateString('es-GT')]);
+
+  updateField(ticket, 'Entrega Confirmada', 'Sí');
+  updateField(ticket, 'Estatus', 'Entregado');
+  updateField(ticket, 'Paso Actual', 'Entrega de documentación');
+
+  return { ok: true };
 }
 
-let faltantesTemp = {};
-function toggleFaltante(ticket, req, checked) {
-  if (!faltantesTemp[ticket]) faltantesTemp[ticket] = {};
-  faltantesTemp[ticket][req] = checked;
+function getPagos(ticket) {
+  const ss    = getSSS();
+  const pagos = ss.getSheetByName(SHEET_CONFIG.PAGOS_SHEET);
+  if (!pagos) return { pagos: [] };
+  const data = pagos.getDataRange().getValues();
+  const headers = data[0];
+  const filas = data.slice(1)
+    .filter(r => r[0] === ticket)
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = r[i]);
+      return obj;
+    });
+  return { pagos: filas };
 }
 
-async function generarFormCorreccion(ticket) {
-  // Recopilar checkboxes actuales
-  const checks = document.querySelectorAll(`#req-list-${ticket} input[type=checkbox]`);
-  const faltantes = [];
-  checks.forEach((ch, i) => { if (ch.checked) faltantes.push(REQUISITOS[i]); });
+// ================================================================
+// GASTOS
+// ================================================================
+function agregarGasto(body) {
+  const { ticket, descripcion, monto } = body;
+  const ss = getSSS();
+  const { gastos } = asegurarHojas();
 
-  if (!faltantes.length) { toast('No hay documentos marcados como faltantes'); return; }
+  const expData = getExpediente(ticket);
+  const cliente = expData.expediente ? expData.expediente['Cliente'] : '';
 
-  // Marcar en el sheet
-  await api('marcarFaltantes', { ticket, faltantes });
-
-  // Generar el form
-  toast('Generando formulario…');
-  const res = await api('generarFormCorr', { ticket });
-
-  if (res.error) { toast('Error: ' + res.error); return; }
-
-  toast('✓ Formulario creado');
-
-  // Mostrar el link con opción de abrir WA
-  const wa = expedientes.find(e => e['Ticket'] === ticket)?.['WhatsApp'];
-  const msg = encodeURIComponent(
-    `Hola, para continuar con su trámite (Exp. ${ticket}) necesitamos documentación faltante: ${res.formUrl}`
-  );
-  const waUrl = wa ? `https://wa.me/${wa}?text=${msg}` : null;
-
-  const confirmed = confirm(
-    `Formulario creado para ${res.cliente}.\n\n` +
-    `Documentos faltantes:\n${res.faltantes.map(f => '• ' + f).join('\n')}\n\n` +
-    `Link: ${res.formUrl}\n\n` +
-    `${waUrl ? '¿Abrir WhatsApp del cliente?' : 'Agrega el número de WhatsApp del cliente para enviar directo.'}`
-  );
-  if (confirmed && waUrl) window.open(waUrl, '_blank');
-
-  abrirExpediente(ticket);
+  gastos.appendRow([ticket, cliente, descripcion, parseFloat(monto) || 0, new Date().toLocaleDateString('es-GT')]);
+  return { ok: true };
 }
 
-async function confirmarPago(ticket) {
-  if (!confirm('¿Confirmar pago contra entrega para ' + ticket + '?')) return;
-  await api('confirmarPago', { ticket });
-  toast('Pago contra entrega confirmado');
-  abrirExpediente(ticket);
+function getGastos(ticket) {
+  const ss     = getSSS();
+  const gastos = ss.getSheetByName(SHEET_CONFIG.GASTOS_SHEET);
+  if (!gastos) return { gastos: [] };
+  const data = gastos.getDataRange().getValues();
+  const headers = data[0];
+  const filas = data.slice(1)
+    .filter(r => r[0] === ticket)
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = r[i]);
+      return obj;
+    });
+  return { gastos: filas };
 }
 
-function mostrarInputWA(ticket) {
-  const box = document.getElementById('wa-input-box');
-  if (box) { box.style.display = 'block'; document.getElementById('wa-num-input')?.focus(); }
+// ================================================================
+// RESUMEN FINANCIERO
+// ================================================================
+function getResumenFinanciero(ticket) {
+  const pagosData  = getPagos(ticket).pagos;
+  const gastosData = getGastos(ticket).gastos;
+
+  const totalAnticipo  = pagosData.filter(p => p['Tipo'] === 'Anticipo').reduce((s, p) => s + (parseFloat(p['Monto (Q)']) || 0), 0);
+  const totalEntrega   = pagosData.filter(p => p['Tipo'] === 'Contra entrega').reduce((s, p) => s + (parseFloat(p['Monto (Q)']) || 0), 0);
+  const totalIngresos  = totalAnticipo + totalEntrega;
+  const totalGastos    = gastosData.reduce((s, g) => s + (parseFloat(g['Monto (Q)']) || 0), 0);
+  const gananciaNeta   = totalIngresos - totalGastos;
+
+  return { totalAnticipo, totalEntrega, totalIngresos, totalGastos, gananciaNeta, pagos: pagosData, gastos: gastosData };
 }
 
-async function guardarWA(ticket) {
-  const num = document.getElementById('wa-num-input')?.value.trim();
-  if (!num) { toast('Ingresa el número'); return; }
-  await api('agregarWhatsApp', { ticket, whatsapp: num });
-  toast('WhatsApp guardado');
-  await cargarExpedientes();
-  abrirExpediente(ticket);
+// ================================================================
+// DOCUMENTOS FALTANTES Y FORM DE CORRECCIÓN
+// ================================================================
+function marcarFaltantes(body) {
+  const { ticket, faltantes } = body;
+  const ss   = getSSS();
+  const ctrl = ss.getSheetByName(SHEET_CONFIG.CONTROL_SHEET);
+  const data = ctrl.getDataRange().getValues();
+  const headers = data[0];
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === ticket) {
+      REQUISITOS.forEach(req => {
+        const col = headers.indexOf('FALTA: ' + req);
+        if (col >= 0) ctrl.getRange(i+1, col+1).setValue(Array.isArray(faltantes) && faltantes.includes(req));
+      });
+      return { ok: true };
+    }
+  }
+  return { error: 'Ticket no encontrado' };
 }
 
-// ── TOAST ──────────────────────────────────────────────────────
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2800);
+function generarFormCorreccion(body) {
+  const { ticket } = body;
+  const ss   = getSSS();
+  const ctrl = ss.getSheetByName(SHEET_CONFIG.CONTROL_SHEET);
+  const data = ctrl.getDataRange().getValues();
+  const headers = data[0];
+
+  let filaCliente = null, rowIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === ticket) { filaCliente = data[i]; rowIndex = i + 1; break; }
+  }
+  if (!filaCliente) return { error: 'Ticket no encontrado' };
+
+  const faltantes = REQUISITOS.filter(req => {
+    const col = headers.indexOf('FALTA: ' + req);
+    return col >= 0 && (filaCliente[col] === true || filaCliente[col] === 'TRUE');
+  });
+  if (!faltantes.length) return { error: 'No hay requisitos marcados como faltantes' };
+
+  const clienteNombre = filaCliente[1];
+  const form = FormApp.create(`Corrección — ${ticket}`);
+  form.setTitle(`Corrección de documentos — ${ticket}`);
+  form.setDescription(`Estimado/a ${clienteNombre},\n\nNecesitamos la siguiente documentación faltante.\n\nExpediente: ${ticket}`);
+  form.setConfirmationMessage(`Gracias. Corrección recibida. Expediente: ${ticket}`);
+  form.addTextItem().setTitle('Número de expediente').setRequired(true);
+
+  const TIPO = { 'Copia DPI accionistas':'archivo','Copia DPI representante legal':'archivo','Copia recibo agua o luz':'archivo','Boleta de anticipo':'archivo' };
+  faltantes.forEach(req => {
+    if (TIPO[req] === 'archivo') form.addFileUploadItem().setTitle(req).setRequired(true);
+    else form.addParagraphTextItem().setTitle(req).setRequired(true);
+  });
+
+  const formUrl = form.getPublishedUrl();
+  const linkCol = headers.indexOf('Link Form Corrección');
+  if (linkCol >= 0) ctrl.getRange(rowIndex, linkCol+1).setValue(formUrl);
+  updateField(ticket, 'Estatus', 'Corrección solicitada');
+
+  return { ok: true, formUrl, faltantes, cliente: clienteNombre };
 }
 
-// ── INIT ───────────────────────────────────────────────────────
-cargarExpedientes();
-</script>
-</body>
-</html>
+// ================================================================
+// TRIGGER AL ENVIAR FORMULARIO
+// ================================================================
+function onFormSubmit(e) {
+  const ss      = getSSS();
+  const sheet   = ss.getSheetByName(SHEET_CONFIG.FORM_RESPONSES) || ss.getActiveSheet();
+  const lastRow = sheet.getLastRow();
+  const year    = new Date().getFullYear();
+  const num     = String(lastRow - 1).padStart(3, '0');
+  const ticketId = `${SHEET_CONFIG.TICKET_PREFIX}-${year}-${num}`;
+
+  sheet.getRange(lastRow, sheet.getLastColumn()+1).setValue(ticketId).setBackground('#D9EAD3');
+
+  asegurarHojas();
+  const ctrl   = ss.getSheetByName(SHEET_CONFIG.CONTROL_SHEET);
+  const values = e.values;
+  const nombre = values[1] || 'Sin nombre';
+  const fecha  = new Date().toLocaleDateString('es-GT');
+
+  const fila = [ticketId, nombre, '', fecha, 'Pendiente revisión', '', 'No', 'No', '', ''];
+  REQUISITOS.forEach(() => fila.push(false));
+  ctrl.appendRow(fila);
+
+  const newRow = ctrl.getLastRow();
+  ctrl.getRange(newRow, 11, 1, REQUISITOS.length).insertCheckboxes();
+
+  try {
+    const form = FormApp.openByUrl(ss.getFormUrl());
+    form.setConfirmationMessage(`✅ Documentación recibida.\n\nTu número de expediente es:\n${ticketId}\n\nAnótalo y envíalo al grupo de WhatsApp de IureCo.`);
+  } catch(err) { Logger.log('No se pudo actualizar confirmación: ' + err); }
+}
+
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('IureCo')
+    .addItem('Inicializar hojas', 'asegurarHojas')
+    .addToUi();
+}
