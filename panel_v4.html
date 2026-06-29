@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IureCo — Panel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F5F0;--white:#FFFFFF;--navy:#1C2B4A;--navy-l:#2A3F6B;
+  --gold:#B8955A;--gold-l:#E8D5B0;--gold-ll:#FBF6ED;
+  --muted:#8A8578;--border:#E5E0D8;--text:#2C2C2C;
+  --red:#C0392B;--green:#2E7D52;--amber:#C07A1A;
+  --sidebar-w:220px;--hdr-h:0px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-card{background:var(--white);border-radius:16px;padding:2.5rem 2rem;width:340px;box-shadow:0 4px 32px rgba(0,0,0,0.08);text-align:center}
+.login-logo{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--navy);letter-spacing:0.05em;margin-bottom:0.25rem}
+.login-logo span{color:var(--gold)}
+.login-sub{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2rem}
+.login-badge{background:var(--gold-ll);color:var(--gold);font-size:0.7rem;font-weight:600;padding:0.25rem 0.75rem;border-radius:20px;letter-spacing:0.08em;text-transform:uppercase;display:inline-block;margin-bottom:1.5rem}
+.login-lbl{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);text-align:left;margin-bottom:0.3rem;margin-top:1rem}
+.login-inp{width:100%;padding:0.65rem 0.875rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Inter',sans-serif;font-size:0.88rem;color:var(--text);background:var(--bg);outline:none;transition:border-color 0.2s}
+.login-inp:focus{border-color:var(--navy)}
+.login-btn{width:100%;margin-top:1.5rem;padding:0.75rem;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.2s}
+.login-btn:hover{background:var(--navy-l)}
+.login-err{color:var(--red);font-size:0.78rem;margin-top:0.75rem;display:none}
+
+/* ── APP SHELL ── */
+#app{display:none;height:100vh;flex-direction:row}
+#app.visible{display:flex}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sb-brand{padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
+.sb-logo{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--navy)}
+.sb-logo span{color:var(--gold)}
+.sb-user{font-size:0.7rem;color:var(--muted);margin-top:0.2rem}
+.sb-section{padding:1rem 1rem 0.25rem;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)}
+.sb-item{display:flex;align-items:center;gap:0.6rem;padding:0.6rem 1.25rem;font-size:0.83rem;color:var(--muted);cursor:pointer;border-radius:0;transition:all 0.15s;border-left:3px solid transparent}
+.sb-item:hover{background:var(--gold-ll);color:var(--navy)}
+.sb-item.active{background:var(--gold-ll);color:var(--navy);border-left-color:var(--gold);font-weight:600}
+.sb-item svg{flex-shrink:0;opacity:0.6}
+.sb-item.active svg{opacity:1}
+.sb-count{margin-left:auto;background:var(--navy);color:#fff;border-radius:10px;padding:0.05rem 0.4rem;font-size:0.62rem;font-weight:600}
+.sb-footer{margin-top:auto;padding:1rem 1.25rem;border-top:1px solid var(--border)}
+.sb-logout{display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--muted);cursor:pointer}
+.sb-logout:hover{color:var(--red)}
+
+/* ── MAIN ── */
+.main-area{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+
+/* ── VIEWS ── */
+.view{display:none;flex:1}
+.view.active{display:flex}
+
+/* ── EXPEDIENTES VIEW ── */
+.exp-view{display:flex;height:100%}
+.exp-list{width:280px;min-width:240px;background:var(--white);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.exp-list-hdr{padding:1rem 1.125rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.exp-list-title{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted)}
+.search-box{padding:0.75rem 1rem;border-bottom:1px solid var(--border)}
+.search-inp{width:100%;padding:0.4rem 0.65rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.8rem;color:var(--text);background:var(--bg);outline:none}
+.search-inp:focus{border-color:var(--navy)}
+.exp-card{padding:0.75rem 1.125rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
+.exp-card:hover{background:var(--gold-ll)}
+.exp-card.active{background:var(--gold-ll);border-left:3px solid var(--gold)}
+.exp-card-top{display:flex;align-items:center;gap:0.6rem}
+.exp-avatar{width:30px;height:30px;border-radius:50%;background:var(--navy);color:var(--gold-l);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0}
+.exp-name{font-weight:600;font-size:0.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-meta{font-size:0.68rem;color:var(--muted);margin-top:0.15rem;display:flex;gap:0.5rem;flex-wrap:wrap}
+.exp-tipo-tag{font-size:0.62rem;font-weight:600;padding:0.1rem 0.4rem;border-radius:4px;background:var(--gold-ll);color:var(--gold);border:1px solid var(--gold-l)}
+
+/* ── DETAIL ── */
+.exp-detail{flex:1;overflow-y:auto;padding:1.5rem;background:var(--bg)}
+.det-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);gap:0.5rem;opacity:0.5}
+
+/* ── DETAIL HEADER ── */
+.det-hdr{margin-bottom:1.25rem}
+.det-hdr h2{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--navy)}
+.det-hdr-sub{font-size:0.75rem;color:var(--muted);margin-top:0.2rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+.det-actions{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.875rem}
+
+/* ── CARDS ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1rem 1.125rem;margin-bottom:1rem}
+.card-title{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.875rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:900px){.row2,.row3{grid-template-columns:1fr}}
+
+/* ── STATUS ── */
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:0.2rem 0.55rem;border-radius:20px;font-size:0.7rem;font-weight:600}
+.status-dot{width:6px;height:6px;border-radius:50%}
+.sel{width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--text);background:var(--white);margin-top:0.5rem;cursor:pointer;outline:none}
+.sel:focus{border-color:var(--navy)}
+
+/* ── FIN ── */
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-top:0.5rem}
+.fin-box{background:var(--bg);border-radius:7px;padding:0.6rem 0.75rem}
+.fin-box.full{grid-column:1/-1}
+.fin-lbl{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);margin-bottom:0.2rem}
+.fin-val{font-size:1rem;font-weight:700;font-family:'Inter',sans-serif}
+.c-pos{color:var(--green)} .c-neg{color:var(--red)} .c-neu{color:var(--navy)}
+
+/* ── PASOS ── */
+.paso-item{display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0;border-bottom:1px solid var(--border);cursor:pointer}
+.paso-item:last-child{border-bottom:none}
+.paso-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;flex-shrink:0}
+.paso-num.done{background:var(--green);color:#fff}
+.paso-num.curr{background:var(--navy);color:var(--gold-l)}
+.paso-num.pend{background:var(--border);color:var(--muted)}
+.paso-lbl{font-size:0.82rem;flex:1}
+.paso-lbl.done{text-decoration:line-through;color:var(--muted)}
+.paso-lbl.curr{font-weight:600}
+
+/* ── PAGOS ── */
+.pago-row{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border)}
+.pago-row:last-of-type{border-bottom:none}
+.pago-lbl{font-size:0.85rem;font-weight:500}
+.pago-sub{font-size:0.7rem;color:var(--muted)}
+.pago-badge{padding:0.18rem 0.5rem;border-radius:20px;font-size:0.68rem;font-weight:600}
+.pago-si{background:#D4EDDA;color:#155724}
+.pago-no{background:#FFF3CD;color:#856404}
+
+/* ── REGISTROS EDITABLES ── */
+.reg-list{list-style:none;margin-top:0.6rem}
+.reg-item{display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0;border-bottom:1px solid var(--border);font-size:0.78rem}
+.reg-item:last-child{border-bottom:none}
+.reg-desc{flex:1;color:var(--text)}
+.reg-monto{font-weight:600;min-width:70px;text-align:right}
+.reg-fecha{color:var(--muted);font-size:0.68rem;min-width:70px}
+.reg-actions{display:flex;gap:0.25rem;flex-shrink:0}
+.icon-btn{background:none;border:1px solid var(--border);border-radius:5px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:0.7rem;transition:all 0.15s}
+.icon-btn:hover.edit{border-color:var(--navy);color:var(--navy)}
+.icon-btn:hover.del{border-color:var(--red);color:var(--red)}
+
+/* ── INPUTS ── */
+.inp-row{display:flex;gap:0.4rem;margin-top:0.6rem;flex-wrap:wrap}
+.inp{flex:1;min-width:80px;padding:0.4rem 0.6rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--text);outline:none;background:var(--white)}
+.inp:focus{border-color:var(--navy)}
+select.inp{cursor:pointer}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:0.4rem 0.85rem;border-radius:7px;font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;text-decoration:none}
+.btn:hover{opacity:0.88}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text)}
+.btn-red{background:var(--red);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-wa{background:#25D366;color:#fff}
+.btn-sm{padding:0.28rem 0.55rem;font-size:0.72rem}
+
+/* ── DOCS PLACEHOLDER ── */
+.docs-ph{background:var(--bg);border:1.5px dashed var(--border);border-radius:8px;padding:1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4rem;color:var(--muted);font-size:0.78rem;min-height:160px;text-align:center}
+.docs-ph svg{opacity:0.25;margin-bottom:0.25rem}
+
+/* ── REQUISITOS ── */
+.req-list{list-style:none}
+.req-item{display:flex;align-items:center;gap:0.5rem;padding:0.38rem 0;font-size:0.82rem;border-bottom:1px solid var(--border)}
+.req-item:last-child{border-bottom:none}
+.req-check{width:14px;height:14px;cursor:pointer;accent-color:var(--red);flex-shrink:0}
+.req-lbl.falta{color:var(--red);font-weight:500}
+
+/* ── NOTAS ── */
+.notas-area{width:100%;min-height:70px;padding:0.6rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--text);resize:vertical;outline:none;background:var(--white)}
+.notas-area:focus{border-color:var(--navy)}
+
+/* ── OP BANNER ── */
+.op-banner{background:#D1F2E1;border:1px solid #A9DFBF;border-radius:8px;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;font-weight:600;color:#0B5A2E;margin-bottom:1rem}
+
+/* ── SERVICIOS VIEW ── */
+.serv-view{padding:1.5rem;flex:1}
+.serv-hdr{margin-bottom:1.5rem}
+.serv-hdr h2{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--navy)}
+.serv-hdr p{font-size:0.78rem;color:var(--muted);margin-top:0.25rem}
+.serv-empty{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:3rem;text-align:center;color:var(--muted)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:12px;padding:1.5rem;width:360px;max-width:95vw}
+.modal h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);margin-bottom:1rem}
+.modal-actions{display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1rem}
+
+/* ── LOADING / TOAST ── */
+.loading{text-align:center;padding:3rem;color:var(--muted)}
+.spinner{width:26px;height:26px;border:2.5px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 0.75rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:0.5rem 1.1rem;border-radius:7px;font-size:0.8rem;font-weight:500;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999}
+#toast.show{opacity:1}
+.divider{border:none;border-top:1px solid var(--border);margin:0.75rem 0}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">Iure<span>Co</span></div>
+    <div class="login-sub">Advice Group</div>
+    <div class="login-badge">Bienvenido de vuelta</div>
+    <div class="login-lbl">Contraseña</div>
+    <input type="password" class="login-inp" id="pwd-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">Iniciar sesión</button>
+    <div class="login-err" id="login-err">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">Iure<span>Co</span></div>
+      <div class="sb-user">Panel de gestión</div>
+    </div>
+
+    <div class="sb-section">Operación</div>
+    <div class="sb-item active" onclick="navTo('exp-activos')" id="nav-exp-activos">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Expedientes
+      <span class="sb-count" id="cnt-activos">0</span>
+    </div>
+    <div class="sb-item" onclick="navTo('exp-culminados')" id="nav-exp-culminados">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 18 4 13"/></svg>
+      Culminados
+      <span class="sb-count" id="cnt-culminados">0</span>
+    </div>
+
+    <div class="sb-section">Servicios</div>
+    <div class="sb-item" onclick="navTo('serv-sociedades')" id="nav-serv-sociedades">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Sociedades Mercantiles
+    </div>
+    <div class="sb-item" onclick="navTo('serv-nombramientos')" id="nav-serv-nombramientos">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Nombramientos Legales
+    </div>
+    <div class="sb-item" onclick="navTo('serv-patentes')" id="nav-serv-patentes">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Patentes
+    </div>
+    <div class="sb-item" onclick="navTo('serv-marcas')" id="nav-serv-marcas">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Marcas
+    </div>
+    <div class="sb-item" onclick="navTo('serv-otros')" id="nav-serv-otros">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      Otros Servicios
+    </div>
+
+    <div class="sb-footer">
+      <div class="sb-logout" onclick="logout()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Cerrar sesión
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-area">
+
+    <!-- VIEW: EXPEDIENTES ACTIVOS -->
+    <div class="view active exp-view" id="view-exp-activos">
+      <div class="exp-list">
+        <div class="exp-list-hdr">
+          <span class="exp-list-title">Expedientes activos</span>
+          <span id="badge-activos" style="background:var(--navy);color:#fff;border-radius:10px;padding:0.05rem 0.4rem;font-size:0.62rem;font-weight:600">0</span>
+        </div>
+        <div class="search-box">
+          <input class="search-inp" placeholder="Buscar…" oninput="filtrar(this.value,'activos')">
+        </div>
+        <div id="list-activos"><div class="loading"><div class="spinner"></div>Cargando…</div></div>
+      </div>
+      <div class="exp-detail" id="detail-activos">
+        <div class="det-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p>Selecciona un expediente</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: EXPEDIENTES CULMINADOS -->
+    <div class="view exp-view" id="view-exp-culminados">
+      <div class="exp-list">
+        <div class="exp-list-hdr">
+          <span class="exp-list-title">Culminados</span>
+          <span id="badge-culminados" style="background:var(--navy);color:#fff;border-radius:10px;padding:0.05rem 0.4rem;font-size:0.62rem;font-weight:600">0</span>
+        </div>
+        <div class="search-box">
+          <input class="search-inp" placeholder="Buscar…" oninput="filtrar(this.value,'culminados')">
+        </div>
+        <div id="list-culminados"><div class="loading"><div class="spinner"></div>Cargando…</div></div>
+      </div>
+      <div class="exp-detail" id="detail-culminados">
+        <div class="det-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 18 4 13"/></svg>
+          <p>Selecciona un expediente culminado</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEWS: SERVICIOS -->
+    ${['sociedades','nombramientos','patentes','marcas','otros'].map(s=>`
+    <div class="view" id="view-serv-${s}">
+      <div class="serv-view">
+        <div class="serv-hdr">
+          <h2 id="serv-title-${s}"></h2>
+          <p id="serv-count-${s}" style="color:var(--muted);font-size:0.78rem"></p>
+        </div>
+        <div id="serv-list-${s}"></div>
+      </div>
+    </div>`).join('')}
+
+  </div>
+</div>
+
+<!-- MODAL EDITAR REGISTRO -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <h3 id="modal-title">Editar registro</h3>
+    <input type="hidden" id="edit-ticket">
+    <input type="hidden" id="edit-tipo">
+    <input type="hidden" id="edit-idx">
+    <div class="login-lbl">Descripción</div>
+    <input class="inp" id="edit-desc" style="width:100%;margin-top:0.3rem" placeholder="Descripción">
+    <div class="login-lbl" style="margin-top:0.75rem">Monto (Q)</div>
+    <input class="inp" id="edit-monto" style="width:100%;margin-top:0.3rem" type="number" min="0" step="0.01">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-navy" onclick="guardarEdicion()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwYL2KycrqC8OiW_9Tkqc8RtwN2tQHLtsc2hRufnPkcNpe8XMY7hMf7ucFvJ8YHec_n/exec';
+const PASSWORD   = 'iureco2024'; // Cambia esta contraseña
+
+const SERVICIOS = {
+  'sociedades':    'Sociedades Mercantiles',
+  'nombramientos': 'Nombramientos Legales',
+  'patentes':      'Patentes',
+  'marcas':        'Marcas',
+  'otros':         'Otros Servicios'
+};
+
+const PASOS = [
+  'Redacción de borrador de escritura',
+  'Impresión y firma de escritura pública',
+  'Preparación de documentación',
+  'Subida a Registro Mercantil',
+  'Seguimiento del proceso',
+  'Descarga de patentes',
+  'Entrega de documentación'
+];
+
+const REQUISITOS = [
+  'Tres nombres tentativos de la sociedad','Nombre tentativo empresa mercantil',
+  'Copia DPI accionistas','Profesión u oficio de cada accionista',
+  'Copia DPI representante legal','Distribución de acciones (%)','Objeto de la sociedad',
+  'Copia recibo agua o luz','Nombre y NIT del Contador','Régimen tributario',
+  'Capital social a autorizar (Q)','Capital suscrito y pagado (Q)','Boleta de anticipo'
+];
+
+const TIPOS_GASTO = ['Honorarios IureCo','Timbres fiscales','Papel protocolo','Gastos de registro','Arancel de inscripción','Patente de comercio','Otro'];
+
+const SC = {
+  'Pendiente revisión':     {bg:'#FFF3CD',c:'#856404',d:'#F0AD4E'},
+  'Corrección solicitada':  {bg:'#F8D7DA',c:'#721C24',d:'#C0392B'},
+  'Documentación completa': {bg:'#D4EDDA',c:'#155724',d:'#27AE60'},
+  'Expediente en operación':{bg:'#D1F2E1',c:'#0B5A2E',d:'#16A085'},
+  'En trámite':             {bg:'#D1ECF1',c:'#0C5460',d:'#2980B9'},
+  'Entregado':              {bg:'#E2E3E5',c:'#383D41',d:'#95A5A6'},
+};
+
+let allExps=[], ticketActivo=null, viewActual='exp-activos';
+
+// ── LOGIN ──────────────────────────────────────────────────────
+function login(){
+  const v=document.getElementById('pwd-inp').value;
+  if(v===PASSWORD){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').classList.add('visible');
+    cargarTodo();
+  } else {
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('pwd-inp').value='';
+  }
+}
+function logout(){
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('pwd-inp').value='';
+}
+
+// ── API ────────────────────────────────────────────────────────
+async function api(action,body={}){
+  const p=new URLSearchParams({action});
+  Object.keys(body).forEach(k=>p.set(k,typeof body[k]==='object'?JSON.stringify(body[k]):body[k]));
+  const r=await fetch(`${WEBAPP_URL}?${p}`,{method:'GET',redirect:'follow'});
+  return r.json();
+}
+
+// ── NAVEGACIÓN ─────────────────────────────────────────────────
+function navTo(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  viewActual=id;
+  if(id.startsWith('serv-')) renderServicio(id.replace('serv-',''));
+}
+
+// ── CARGAR TODO ────────────────────────────────────────────────
+async function cargarTodo(){
+  try{
+    const d=await api('getExpedientes');
+    allExps=d.expedientes||[];
+    renderListas();
+  } catch(e){ toast('Error de conexión'); }
+}
+
+function renderListas(){
+  const activos    = allExps.filter(e=>e['Estatus']!=='Entregado');
+  const culminados = allExps.filter(e=>e['Estatus']==='Entregado');
+
+  document.getElementById('cnt-activos').textContent    = activos.length;
+  document.getElementById('cnt-culminados').textContent = culminados.length;
+  document.getElementById('badge-activos').textContent  = activos.length;
+  document.getElementById('badge-culminados').textContent = culminados.length;
+
+  renderGrupo(activos,   'list-activos');
+  renderGrupo(culminados,'list-culminados');
+
+  // Actualizar conteos en servicios
+  Object.keys(SERVICIOS).forEach(k=>{
+    const cnt=allExps.filter(e=>(e['Tipo Servicio']||'')=== SERVICIOS[k]).length;
+    const el=document.getElementById('serv-count-'+k);
+    if(el) el.textContent=`${cnt} expediente${cnt!==1?'s':''}`;
+  });
+}
+
+function renderGrupo(lista, containerId){
+  const el=document.getElementById(containerId);
+  if(!lista.length){el.innerHTML='<div class="loading" style="padding:2rem">Sin expedientes</div>';return}
+  el.innerHTML=lista.map(e=>{
+    const st=e['Estatus']||'Pendiente revisión';
+    const sc=SC[st]||SC['Pendiente revisión'];
+    const tipo=e['Tipo Servicio']||'';
+    return `<div class="exp-card ${e['Ticket']===ticketActivo?'active':''}" onclick="abrirExp('${e['Ticket']}')">
+      <div class="exp-card-top">
+        <div class="exp-avatar">${(e['Cliente']||'?')[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div class="exp-name">${e['Cliente']||'Sin nombre'}</div>
+          <div class="exp-meta">
+            <span>${e['Ticket']}</span>
+            ${tipo?`<span class="exp-tipo-tag">${tipo}</span>`:''}
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:0.4rem">
+        <span class="status-badge" style="background:${sc.bg};color:${sc.c};font-size:0.65rem">
+          <span class="status-dot" style="background:${sc.d}"></span>${st}
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrar(q, grupo){
+  const lista = grupo==='activos'
+    ? allExps.filter(e=>e['Estatus']!=='Entregado')
+    : allExps.filter(e=>e['Estatus']==='Entregado');
+  const f=lista.filter(e=>(e['Cliente']||'').toLowerCase().includes(q.toLowerCase())||(e['Ticket']||'').toLowerCase().includes(q.toLowerCase()));
+  renderGrupo(f,'list-'+grupo);
+}
+
+// ── SERVICIOS VIEW ─────────────────────────────────────────────
+function renderServicio(key){
+  const nombre=SERVICIOS[key];
+  document.getElementById('serv-title-'+key).textContent=nombre;
+  const lista=allExps.filter(e=>(e['Tipo Servicio']||'')===nombre);
+  document.getElementById('serv-count-'+key).textContent=`${lista.length} expediente${lista!==1?'s':''}`;
+  const el=document.getElementById('serv-list-'+key);
+  if(!lista.length){
+    el.innerHTML=`<div class="serv-empty">Sin expedientes de ${nombre}</div>`;return;
+  }
+  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem">${lista.map(e=>{
+    const st=e['Estatus']||'Pendiente revisión';
+    const sc=SC[st]||SC['Pendiente revisión'];
+    return `<div class="card" style="cursor:pointer;margin-bottom:0" onclick="navTo('exp-activos');setTimeout(()=>abrirExp('${e['Ticket']}'),300)">
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem">
+        <div class="exp-avatar">${(e['Cliente']||'?')[0].toUpperCase()}</div>
+        <div><div style="font-weight:600;font-size:0.85rem">${e['Cliente']||'Sin nombre'}</div>
+        <div style="font-size:0.68rem;color:var(--muted)">${e['Ticket']}</div></div>
+      </div>
+      <span class="status-badge" style="background:${sc.bg};color:${sc.c};font-size:0.65rem">
+        <span class="status-dot" style="background:${sc.d}"></span>${st}
+      </span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ── ABRIR EXPEDIENTE ───────────────────────────────────────────
+async function abrirExp(ticket){
+  ticketActivo=ticket;
+  renderListas();
+  const detId = viewActual==='exp-culminados'?'detail-culminados':'detail-activos';
+  document.getElementById(detId).innerHTML='<div class="loading"><div class="spinner"></div>Cargando…</div>';
+  const [expD,finD]=await Promise.all([api('getExpediente',{ticket}),api('getResumenFinanciero',{ticket})]);
+  if(expD.error){toast('Error: '+expD.error);return}
+  renderDetalle(expD.expediente,finD,detId);
+}
+
+// ── RENDER DETALLE ─────────────────────────────────────────────
+function renderDetalle(exp,fin,detId){
+  const ticket  =exp['Ticket'];
+  const nombre  =exp['Cliente']||'Sin nombre';
+  const wa      =exp['WhatsApp']||'';
+  const estatus =exp['Estatus']||'Pendiente revisión';
+  const pasoAct =exp['Paso Actual']||'';
+  const notas   =exp['Notas']||'';
+  const anticipo=exp['Anticipo Confirmado']==='Sí'||exp['Anticipo Confirmado']===true;
+  const entrega =exp['Entrega Confirmada']==='Sí'||exp['Entrega Confirmada']===true;
+  const linkForm=exp['Link Form Corrección']||'';
+  const tipoServ=exp['Tipo Servicio']||'';
+  const sc      =SC[estatus]||SC['Pendiente revisión'];
+  const pasoIdx =PASOS.indexOf(pasoAct);
+  const faltantes=REQUISITOS.filter(r=>exp['FALTA: '+r]===true||exp['FALTA: '+r]==='TRUE');
+  const pagos   =fin.pagos||[];
+  const gastos  =fin.gastos||[];
+  const netaCls =fin.gananciaNeta>0?'c-pos':fin.gananciaNeta<0?'c-neg':'c-neu';
+  const netaBg  =fin.gananciaNeta>0?'#D4EDDA':fin.gananciaNeta<0?'#F8D7DA':'#F4F3EF';
+
+  document.getElementById(detId).innerHTML=`
+    <div class="det-hdr">
+      <h2>${nombre}</h2>
+      <div class="det-hdr-sub">
+        <span>${ticket}</span>
+        <span>${exp['Fecha Ingreso']||'—'}</span>
+        ${tipoServ?`<span class="exp-tipo-tag">${tipoServ}</span>`:''}
+        <span class="status-badge" style="background:${sc.bg};color:${sc.c}">
+          <span class="status-dot" style="background:${sc.d}"></span>${estatus}
+        </span>
+      </div>
+      <div class="det-actions">
+        ${wa?`<a class="btn btn-wa" href="https://wa.me/${wa}" target="_blank">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a9 9 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          WhatsApp</a>`
+        :`<button class="btn btn-outline" onclick="toggleEl('wa-box-${ticket}')">+ WhatsApp</button>`}
+        <button class="btn btn-outline btn-sm" onclick="exportarXLS('${ticket}')">⬇ XLS contador</button>
+        <button class="btn btn-navy" onclick="guardarNotas('${ticket}','${detId}')">Guardar notas</button>
+      </div>
+    </div>
+
+    ${anticipo?`<div class="op-banner">✅ Expediente en operación — Anticipo confirmado</div>`:''}
+
+    ${!wa?`<div class="card" id="wa-box-${ticket}" style="display:none">
+      <div class="card-title">WhatsApp del cliente</div>
+      <div class="inp-row">
+        <input class="inp" id="wa-inp-${ticket}" placeholder="502XXXXXXXX" type="tel">
+        <button class="btn btn-navy btn-sm" onclick="guardarWA('${ticket}','${detId}')">Guardar</button>
+      </div>
+    </div>`:''}
+
+    <!-- FILA 1: Tipo servicio + Estatus -->
+    <div class="row2">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Tipo de servicio</div>
+        <select class="sel" onchange="cambiarTipoServ('${ticket}','${detId}',this.value)">
+          <option value="">— Asignar tipo —</option>
+          ${Object.values(SERVICIOS).map(s=>`<option ${tipoServ===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+        <div class="divider"></div>
+        <div class="card-title">Estatus</div>
+        <span class="status-badge" style="background:${sc.bg};color:${sc.c}">
+          <span class="status-dot" style="background:${sc.d}"></span>${estatus}
+        </span>
+        <select class="sel" onchange="cambiarEstatus('${ticket}','${detId}',this.value)">
+          <option value="">— Cambiar estatus —</option>
+          <option>Pendiente revisión</option>
+          <option>Corrección solicitada</option>
+          <option>Documentación completa</option>
+          <option>Expediente en operación</option>
+          <option>En trámite</option>
+          <option>Entregado</option>
+        </select>
+        <div class="divider"></div>
+        <div class="card-title">Resumen financiero</div>
+        <div class="fin-grid">
+          <div class="fin-box"><div class="fin-lbl">Ingresos</div><div class="fin-val c-pos">Q ${(fin.totalIngresos||0).toFixed(2)}</div></div>
+          <div class="fin-box"><div class="fin-lbl">Gastos</div><div class="fin-val c-neg">Q ${(fin.totalGastos||0).toFixed(2)}</div></div>
+          <div class="fin-box full" style="background:${netaBg}"><div class="fin-lbl">Ganancia neta</div><div class="fin-val ${netaCls}">Q ${(fin.gananciaNeta||0).toFixed(2)}</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Pasos del trámite</div>
+        ${PASOS.map((p,i)=>{const e=i<pasoIdx?'done':i===pasoIdx?'curr':'pend';return`<div class="paso-item" onclick="avanzarPaso('${ticket}',${i},'${detId}')"><div class="paso-num ${e}">${i<pasoIdx?'✓':i+1}</div><div class="paso-lbl ${e}">${p}</div>${i===pasoIdx?'<span style="font-size:0.62rem;color:var(--navy);font-weight:600">◀</span>':''}</div>`;}).join('')}
+      </div>
+    </div>
+
+    <!-- FILA 2: Pagos -->
+    <div class="card">
+      <div class="card-title">Pagos</div>
+      <div class="row2" style="margin-bottom:0">
+        <div>
+          <div class="pago-row">
+            <div><div class="pago-lbl">Anticipo</div><div class="pago-sub">Q ${(fin.totalAnticipo||0).toFixed(2)}</div></div>
+            <div style="display:flex;gap:0.35rem;align-items:center">
+              <span class="pago-badge ${anticipo?'pago-si':'pago-no'}">${anticipo?'✓':'Pendiente'}</span>
+              <button class="btn btn-green btn-sm" onclick="toggleEl('form-ant-${ticket}')">+ Agregar</button>
+            </div>
+          </div>
+          <div id="form-ant-${ticket}" style="display:none" class="inp-row">
+            <input class="inp" id="mant-${ticket}" placeholder="Monto Q" type="number" min="0" step="0.01">
+            <button class="btn btn-green btn-sm" onclick="registrarAnticipo('${ticket}','${detId}')">Guardar</button>
+          </div>
+          <ul class="reg-list">
+            ${pagos.filter(p=>p['Tipo']==='Anticipo').map((p,i)=>`
+            <li class="reg-item">
+              <span class="reg-desc">${p['Tipo']}</span>
+              <span class="reg-fecha">${p['Fecha']}</span>
+              <span class="reg-monto c-pos">Q ${parseFloat(p['Monto (Q)']).toFixed(2)}</span>
+              <div class="reg-actions">
+                <button class="icon-btn edit" title="Editar" onclick="abrirModal('${ticket}','pago','${i}','${p['Tipo']}','${p['Monto (Q)']}','${detId}')">✏</button>
+                <button class="icon-btn del" title="Eliminar" onclick="eliminarRegistro('${ticket}','pago',${i},'${detId}')">✕</button>
+              </div>
+            </li>`).join('')}
+          </ul>
+        </div>
+        <div>
+          <div class="pago-row">
+            <div><div class="pago-lbl">Contra entrega</div><div class="pago-sub">Q ${(fin.totalEntrega||0).toFixed(2)}</div></div>
+            <div style="display:flex;gap:0.35rem;align-items:center">
+              <span class="pago-badge ${entrega?'pago-si':'pago-no'}">${entrega?'✓':'Pendiente'}</span>
+              ${!entrega?`<button class="btn btn-gold btn-sm" onclick="toggleEl('form-ent-${ticket}')">Confirmar</button>`:''}
+            </div>
+          </div>
+          <div id="form-ent-${ticket}" style="display:none" class="inp-row">
+            <input class="inp" id="ment-${ticket}" placeholder="Monto Q" type="number" min="0" step="0.01">
+            <button class="btn btn-gold btn-sm" onclick="registrarEntrega('${ticket}','${detId}')">Confirmar → Cerrar</button>
+          </div>
+          <ul class="reg-list">
+            ${pagos.filter(p=>p['Tipo']==='Contra entrega').map((p,i)=>`
+            <li class="reg-item">
+              <span class="reg-desc">${p['Tipo']}</span>
+              <span class="reg-fecha">${p['Fecha']}</span>
+              <span class="reg-monto c-pos">Q ${parseFloat(p['Monto (Q)']).toFixed(2)}</span>
+              <div class="reg-actions">
+                <button class="icon-btn edit" onclick="abrirModal('${ticket}','pago','${i}','${p['Tipo']}','${p['Monto (Q)']}','${detId}')">✏</button>
+                <button class="icon-btn del" onclick="eliminarRegistro('${ticket}','pago',${i},'${detId}')">✕</button>
+              </div>
+            </li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 3: Gastos + Docs -->
+    <div class="row2">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Gastos</div>
+        <div class="inp-row">
+          <select class="inp" id="tgasto-${ticket}">${TIPOS_GASTO.map(t=>`<option>${t}</option>`).join('')}</select>
+          <input class="inp" id="mgasto-${ticket}" placeholder="Q" type="number" min="0" step="0.01" style="max-width:85px">
+          <button class="btn btn-red btn-sm" onclick="agregarGasto('${ticket}','${detId}')">+</button>
+        </div>
+        <ul class="reg-list">
+          ${gastos.length?gastos.map((g,i)=>`
+          <li class="reg-item">
+            <span class="reg-desc">${g['Descripción']}</span>
+            <span class="reg-fecha">${g['Fecha']}</span>
+            <span class="reg-monto c-neg">Q ${parseFloat(g['Monto (Q)']).toFixed(2)}</span>
+            <div class="reg-actions">
+              <button class="icon-btn edit" onclick="abrirModal('${ticket}','gasto',${i},'${g['Descripción']}','${g['Monto (Q)']}','${detId}')">✏</button>
+              <button class="icon-btn del" onclick="eliminarRegistro('${ticket}','gasto',${i},'${detId}')">✕</button>
+            </div>
+          </li>`).join(''):'<li style="padding:0.75rem 0;color:var(--muted);font-size:0.78rem">Sin gastos</li>'}
+        </ul>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Documentos del expediente</div>
+        <div class="docs-ph">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <span>Vista de miniaturas</span>
+          <span style="font-size:0.68rem">Próximamente — conexión con Drive</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 4: Documentos faltantes -->
+    <div class="card">
+      <div class="card-title">Documentos — marcar faltantes</div>
+      <ul class="req-list" id="req-${ticket}">
+        ${REQUISITOS.map(r=>{const f=faltantes.includes(r);return`<li class="req-item"><input type="checkbox" class="req-check" ${f?'checked':''}><span class="req-lbl ${f?'falta':''}">${r}</span></li>`;}).join('')}
+      </ul>
+      <div style="margin-top:0.875rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button class="btn btn-red" onclick="generarFormCorreccion('${ticket}','${detId}')">Generar form de corrección</button>
+        ${linkForm?`<a class="btn btn-outline" href="${linkForm}" target="_blank">Ver form</a>`:''}
+      </div>
+    </div>
+
+    <!-- FILA 5: Notas -->
+    <div class="card">
+      <div class="card-title">Notas internas</div>
+      <textarea class="notas-area" id="notas-${ticket}" placeholder="Anotaciones internas…">${notas}</textarea>
+    </div>
+  `;
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+function toggleEl(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+
+// ── ACCIONES ───────────────────────────────────────────────────
+async function cambiarTipoServ(ticket,detId,tipo){
+  await api('updateField',{ticket,campo:'Tipo Servicio',valor:tipo});
+  toast('Tipo de servicio asignado');
+  await cargarTodo();
+  abrirExp(ticket);
+}
+async function cambiarEstatus(ticket,detId,estatus){
+  if(!estatus)return;
+  await api('updateEstatus',{ticket,estatus});
+  toast('Estatus actualizado');
+  await cargarTodo();
+  abrirExp(ticket);
+}
+async function avanzarPaso(ticket,idx,detId){
+  await api('updatePaso',{ticket,paso:PASOS[idx]});
+  toast('Paso: '+PASOS[idx]);
+  abrirExp(ticket);
+}
+async function guardarNotas(ticket,detId){
+  const n=document.getElementById('notas-'+ticket)?.value||'';
+  await api('updateNotas',{ticket,notas:n});
+  toast('Notas guardadas');
+}
+async function guardarWA(ticket,detId){
+  const n=document.getElementById('wa-inp-'+ticket)?.value.trim();
+  if(!n){toast('Ingresa el número');return}
+  await api('agregarWhatsApp',{ticket,whatsapp:n});
+  toast('WhatsApp guardado');
+  await cargarTodo();
+  abrirExp(ticket);
+}
+async function registrarAnticipo(ticket,detId){
+  const m=document.getElementById('mant-'+ticket)?.value;
+  if(!m||m<=0){toast('Ingresa el monto');return}
+  await api('agregarPago',{ticket,tipo:'Anticipo',monto:m});
+  toast('Anticipo registrado');
+  await cargarTodo();
+  abrirExp(ticket);
+}
+async function registrarEntrega(ticket,detId){
+  const m=document.getElementById('ment-'+ticket)?.value;
+  if(!m||m<=0){toast('Ingresa el monto');return}
+  if(!confirm('¿Confirmar pago contra entrega? Esto cerrará el expediente.'))return;
+  await api('confirmarEntrega',{ticket,monto:m});
+  toast('Expediente cerrado');
+  await cargarTodo();
+  abrirExp(ticket);
+}
+async function agregarGasto(ticket,detId){
+  const d=document.getElementById('tgasto-'+ticket)?.value;
+  const m=document.getElementById('mgasto-'+ticket)?.value;
+  if(!m||m<=0){toast('Ingresa el monto');return}
+  await api('agregarGasto',{ticket,descripcion:d,monto:m});
+  toast('Gasto registrado');
+  abrirExp(ticket);
+}
+
+// ── EDITAR/ELIMINAR ────────────────────────────────────────────
+let editDetId='';
+function abrirModal(ticket,tipo,idx,desc,monto,detId){
+  editDetId=detId;
+  document.getElementById('edit-ticket').value=ticket;
+  document.getElementById('edit-tipo').value=tipo;
+  document.getElementById('edit-idx').value=idx;
+  document.getElementById('edit-desc').value=desc;
+  document.getElementById('edit-monto').value=monto;
+  document.getElementById('modal-title').textContent=tipo==='pago'?'Editar pago':'Editar gasto';
+  document.getElementById('modal-edit').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-edit').classList.remove('open')}
+async function guardarEdicion(){
+  const ticket=document.getElementById('edit-ticket').value;
+  const tipo  =document.getElementById('edit-tipo').value;
+  const idx   =parseInt(document.getElementById('edit-idx').value);
+  const desc  =document.getElementById('edit-desc').value;
+  const monto =document.getElementById('edit-monto').value;
+  await api('editarRegistro',{ticket,tipo,idx,descripcion:desc,monto});
+  closeModal();
+  toast('Registro actualizado');
+  abrirExp(ticket);
+}
+async function eliminarRegistro(ticket,tipo,idx,detId){
+  if(!confirm('¿Eliminar este registro?'))return;
+  await api('eliminarRegistro',{ticket,tipo,idx});
+  toast('Registro eliminado');
+  abrirExp(ticket);
+}
+
+// ── FORM CORRECCIÓN ────────────────────────────────────────────
+async function generarFormCorreccion(ticket,detId){
+  const checks=document.querySelectorAll(`#req-${ticket} input[type=checkbox]`);
+  const faltantes=[];
+  checks.forEach((c,i)=>{if(c.checked)faltantes.push(REQUISITOS[i]);});
+  if(!faltantes.length){toast('No hay documentos marcados');return}
+  await api('marcarFaltantes',{ticket,faltantes});
+  toast('Generando formulario…');
+  const res=await api('generarFormCorr',{ticket});
+  if(res.error){toast('Error: '+res.error);return}
+  toast('✓ Formulario creado');
+  const exp=allExps.find(e=>e['Ticket']===ticket);
+  const wa=exp?.['WhatsApp'];
+  const msg=encodeURIComponent(`Hola, para continuar con su trámite (Exp. ${ticket}) necesitamos documentación faltante: ${res.formUrl}`);
+  const ok=confirm(`Formulario creado.\n\nFaltantes:\n${res.faltantes.map(f=>'• '+f).join('\n')}\n\nLink: ${res.formUrl}\n\n${wa?'¿Abrir WhatsApp del cliente?':'Agrega el WhatsApp del cliente.'}`);
+  if(ok&&wa)window.open(`https://wa.me/${wa}?text=${msg}`,'_blank');
+  abrirExp(ticket);
+}
+
+// ── EXPORTAR XLS ───────────────────────────────────────────────
+function exportarXLS(ticket){
+  const exp=allExps.find(e=>e['Ticket']===ticket);
+  const nombre=exp?exp['Cliente']:ticket;
+  api('getResumenFinanciero',{ticket}).then(fin=>{
+    let csv=`IURECO — RESUMEN FINANCIERO\nExpediente:,${ticket}\nCliente:,${nombre}\n\nINGRESOS\nTipo,Monto (Q),Fecha\n`;
+    (fin.pagos||[]).forEach(p=>{csv+=`${p['Tipo']},${p['Monto (Q)']},${p['Fecha']}\n`;});
+    csv+=`TOTAL INGRESOS,${(fin.totalIngresos||0).toFixed(2)}\n\nGASTOS\nDescripción,Monto (Q),Fecha\n`;
+    (fin.gastos||[]).forEach(g=>{csv+=`${g['Descripción']},${g['Monto (Q)']},${g['Fecha']}\n`;});
+    csv+=`TOTAL GASTOS,${(fin.totalGastos||0).toFixed(2)}\n\nGANANCIA NETA,${(fin.gananciaNeta||0).toFixed(2)}\n`;
+    const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`IureCo_${ticket}_${nombre}.csv`;a.click();
+    URL.revokeObjectURL(url);toast('Archivo descargado');
+  });
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
