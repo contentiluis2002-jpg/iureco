@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IureCo — Panel de Expedientes</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1A2744;--navy2:#243460;--gold:#C8A84B;--gold-l:#F0E0A0;
+  --bg:#F4F3EF;--white:#FFFFFF;--muted:#6B6B5E;--border:#E2DED4;
+  --green:#25D366;--green2:#27AE60;--red:#C0392B;--amber:#E67E22;
+  --blue:#2980B9;--teal:#16A085;--gray:#95A5A6;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--navy);min-height:100vh}
+
+/* HEADER */
+header{background:var(--navy);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{color:#fff;font-weight:700;font-size:1rem;letter-spacing:0.1em;text-transform:uppercase}
+.logo span{color:var(--gold)}
+.logo sub{color:rgba(255,255,255,0.4);font-weight:400;font-size:0.78rem;margin-left:0.5rem;vertical-align:middle;text-transform:none;letter-spacing:0}
+.hdr-right{display:flex;align-items:center;gap:0.6rem}
+#search-input{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:7px;padding:0.35rem 0.7rem;color:#fff;font-family:'Inter',sans-serif;font-size:0.8rem;width:190px;outline:none}
+#search-input::placeholder{color:rgba(255,255,255,0.45)}
+#search-input:focus{border-color:var(--gold)}
+.btn-hdr{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:7px;color:#fff;padding:0.35rem 0.7rem;font-size:0.78rem;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-hdr:hover{background:rgba(255,255,255,0.2)}
+
+/* LAYOUT */
+.main{display:flex;height:calc(100vh - 52px)}
+
+/* SIDEBAR */
+.sidebar{width:260px;min-width:220px;background:var(--white);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.sb-header{padding:0.75rem 1rem;border-bottom:1px solid var(--border);font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;display:flex;justify-content:space-between;align-items:center}
+#total-badge{background:var(--navy);color:#fff;border-radius:10px;padding:0.1rem 0.45rem;font-size:0.68rem}
+.exp-item{padding:0.7rem 0.875rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;display:flex;align-items:center;gap:0.6rem}
+.exp-item:hover{background:#F9F8F5}
+.exp-item.active{background:#EEF1F8;border-left:3px solid var(--navy)}
+.exp-avatar{width:32px;height:32px;border-radius:50%;background:var(--navy);color:var(--gold-l);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0}
+.exp-info{flex:1;min-width:0}
+.exp-nombre{font-weight:600;font-size:0.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-ticket{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted)}
+.exp-badge{font-size:0.65rem;font-weight:600;padding:0.15rem 0.4rem;border-radius:10px;white-space:nowrap;margin-top:2px;display:inline-block}
+
+/* DETAIL */
+.detail{flex:1;overflow-y:auto;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1rem}
+.detail-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);gap:0.5rem}
+.detail-empty svg{opacity:0.25}
+
+/* DETAIL HEADER */
+.dh{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem}
+.dh-left h2{font-size:1.15rem;font-weight:700}
+.dh-left p{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--muted);margin-top:0.15rem}
+.dh-actions{display:flex;gap:0.5rem;flex-wrap:wrap}
+
+/* BANNER */
+.op-banner{background:#D1F2E1;border:1px solid #A9DFBF;border-radius:8px;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;font-size:0.83rem;font-weight:600;color:#0B5A2E}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1rem 1.125rem}
+.card-title{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);margin-bottom:0.85rem}
+
+/* ROW LAYOUTS */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+@media(max-width:800px){.row2,.row3{grid-template-columns:1fr}}
+
+/* STATUS */
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:0.2rem 0.55rem;border-radius:20px;font-size:0.72rem;font-weight:600}
+.status-dot{width:6px;height:6px;border-radius:50%}
+.status-select{width:100%;padding:0.45rem 0.6rem;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--navy);background:var(--white);margin-top:0.6rem;cursor:pointer}
+
+/* FIN RESUMEN */
+.fin-row{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-top:0.6rem}
+.fin-box{background:var(--bg);border-radius:7px;padding:0.6rem 0.75rem}
+.fin-box.full{grid-column:1/-1}
+.fin-lbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:0.2rem}
+.fin-val{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700}
+.c-pos{color:var(--green2)} .c-neg{color:var(--red)} .c-neu{color:var(--navy)}
+
+/* PASOS */
+.paso-item{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid var(--border);cursor:pointer}
+.paso-item:last-child{border-bottom:none}
+.paso-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;flex-shrink:0}
+.paso-num.done{background:var(--teal);color:#fff}
+.paso-num.curr{background:var(--navy);color:var(--gold-l)}
+.paso-num.pend{background:var(--border);color:var(--muted)}
+.paso-lbl{font-size:0.83rem;flex:1}
+.paso-lbl.done{text-decoration:line-through;color:var(--muted)}
+.paso-lbl.curr{font-weight:600}
+
+/* PAGOS */
+.pago-row{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border)}
+.pago-row:last-of-type{border-bottom:none}
+.pago-lbl{font-size:0.85rem;font-weight:500}
+.pago-sub{font-size:0.72rem;color:var(--muted)}
+.pago-badge{padding:0.2rem 0.55rem;border-radius:20px;font-size:0.7rem;font-weight:600}
+.pago-si{background:#D4EDDA;color:#155724} .pago-no{background:#FFF3CD;color:#856404}
+.pago-hist{list-style:none;margin-top:0.5rem}
+.pago-hist li{display:flex;justify-content:space-between;font-size:0.78rem;padding:0.25rem 0;border-bottom:1px solid var(--border)}
+.pago-hist li:last-child{border-bottom:none}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* INGRESOS/GASTOS JUNTOS */
+.ig-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:700px){.ig-grid{grid-template-columns:1fr}}
+.ig-list{list-style:none;margin-top:0.5rem}
+.ig-list li{display:flex;justify-content:space-between;font-size:0.78rem;padding:0.3rem 0;border-bottom:1px solid var(--border)}
+.ig-list li:last-child{border-bottom:none}
+
+/* INPUTS */
+.inp-row{display:flex;gap:0.4rem;margin-top:0.6rem;flex-wrap:wrap}
+.inp{flex:1;min-width:80px;padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--navy)}
+.inp:focus{outline:none;border-color:var(--navy)}
+select.inp{cursor:pointer}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:0.4rem 0.85rem;border-radius:7px;font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:500;cursor:pointer;border:none;transition:opacity 0.15s;text-decoration:none}
+.btn:active{opacity:0.8}
+.btn-wa{background:var(--green);color:#fff}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--navy)}
+.btn-red{background:var(--red);color:#fff}
+.btn-gold{background:var(--gold);color:var(--navy);font-weight:700}
+.btn-green{background:var(--green2);color:#fff}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-sm{padding:0.28rem 0.55rem;font-size:0.74rem}
+
+/* DOCS DASHBOARD */
+.docs-panel{background:var(--bg);border:1px dashed var(--border);border-radius:10px;padding:1rem;min-height:180px}
+.docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:0.6rem;margin-top:0.75rem}
+.doc-thumb{background:var(--white);border:1px solid var(--border);border-radius:7px;padding:0.6rem 0.4rem;display:flex;flex-direction:column;align-items:center;gap:0.3rem;text-align:center;cursor:pointer;transition:border-color 0.15s}
+.doc-thumb:hover{border-color:var(--navy)}
+.doc-thumb svg{opacity:0.5}
+.doc-thumb .doc-name{font-size:0.62rem;color:var(--muted);line-height:1.2;word-break:break-word}
+.doc-thumb .doc-status{font-size:0.6rem;font-weight:600;padding:0.1rem 0.3rem;border-radius:4px}
+.doc-ok{background:#D4EDDA;color:#155724}
+.doc-miss{background:#F8D7DA;color:#721C24}
+.docs-coming{display:flex;flex-direction:column;align-items:center;justify-content:center;height:140px;color:var(--muted);gap:0.4rem;font-size:0.8rem}
+.docs-coming svg{opacity:0.2}
+
+/* REQUISITOS */
+.req-list{list-style:none}
+.req-item{display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;font-size:0.83rem;border-bottom:1px solid var(--border)}
+.req-item:last-child{border-bottom:none}
+.req-check{width:15px;height:15px;cursor:pointer;accent-color:var(--red);flex-shrink:0}
+.req-lbl.falta{color:var(--red);font-weight:500}
+
+/* NOTAS */
+.notas-area{width:100%;min-height:70px;padding:0.65rem;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:0.83rem;color:var(--navy);resize:vertical;margin-top:0.5rem}
+.notas-area:focus{outline:none;border-color:var(--navy)}
+
+/* WA INPUT */
+.wa-box{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1rem 1.125rem}
+
+/* LOADING / TOAST */
+.loading{text-align:center;padding:3rem;color:var(--muted)}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 0.75rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:0.55rem 1.1rem;border-radius:7px;font-size:0.82rem;font-weight:500;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999}
+#toast.show{opacity:1}
+
+.divider{border:none;border-top:1px solid var(--border);margin:0.75rem 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Iure<span>Co</span><sub>Expedientes</sub></div>
+  <div class="hdr-right">
+    <input type="text" id="search-input" placeholder="Buscar cliente o ticket…" oninput="filtrarExpedientes()">
+    <button class="btn-hdr" onclick="cargarExpedientes()">↺ Actualizar</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-header">Expedientes <span id="total-badge">0</span></div>
+    <div id="lista-expedientes"><div class="loading"><div class="spinner"></div>Cargando…</div></div>
+  </div>
+
+  <!-- DETALLE -->
+  <div class="detail" id="detail-panel">
+    <div class="detail-empty">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p>Selecciona un expediente</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwYL2KycrqC8OiW_9Tkqc8RtwN2tQHLtsc2hRufnPkcNpe8XMY7hMf7ucFvJ8YHec_n/exec';
+
+const PASOS = [
+  'Redacción de borrador de escritura',
+  'Impresión y firma de escritura pública',
+  'Preparación de documentación',
+  'Subida a Registro Mercantil',
+  'Seguimiento del proceso',
+  'Descarga de patentes',
+  'Entrega de documentación'
+];
+
+const REQUISITOS = [
+  'Tres nombres tentativos de la sociedad',
+  'Nombre tentativo empresa mercantil',
+  'Copia DPI accionistas',
+  'Profesión u oficio de cada accionista',
+  'Copia DPI representante legal',
+  'Distribución de acciones (%)',
+  'Objeto de la sociedad',
+  'Copia recibo agua o luz',
+  'Nombre y NIT del Contador',
+  'Régimen tributario',
+  'Capital social a autorizar (Q)',
+  'Capital suscrito y pagado (Q)',
+  'Boleta de anticipo'
+];
+
+const TIPOS_GASTO = ['Honorarios IureCo','Timbres fiscales','Papel protocolo','Gastos de registro','Arancel de inscripción','Patente de comercio','Otro'];
+
+const SC = {
+  'Pendiente revisión':     {bg:'#FFF3CD',c:'#856404',d:'#F0AD4E'},
+  'Corrección solicitada':  {bg:'#F8D7DA',c:'#721C24',d:'#C0392B'},
+  'Documentación completa': {bg:'#D4EDDA',c:'#155724',d:'#27AE60'},
+  'Expediente en operación':{bg:'#D1F2E1',c:'#0B5A2E',d:'#16A085'},
+  'En trámite':             {bg:'#D1ECF1',c:'#0C5460',d:'#2980B9'},
+  'Entregado':              {bg:'#E2E3E5',c:'#383D41',d:'#95A5A6'},
+};
+
+let expedientes=[], ticketActivo=null;
+
+async function api(action, body={}) {
+  const p = new URLSearchParams({action});
+  Object.keys(body).forEach(k => p.set(k, typeof body[k]==='object'?JSON.stringify(body[k]):body[k]));
+  const r = await fetch(`${WEBAPP_URL}?${p}`, {method:'GET',redirect:'follow'});
+  return r.json();
+}
+
+// ── LISTA ──────────────────────────────────────────────────────
+async function cargarExpedientes() {
+  document.getElementById('lista-expedientes').innerHTML='<div class="loading"><div class="spinner"></div>Cargando…</div>';
+  try {
+    const d = await api('getExpedientes');
+    expedientes = d.expedientes||[];
+    renderLista(expedientes);
+  } catch(e) {
+    document.getElementById('lista-expedientes').innerHTML='<div class="loading">⚠️ Sin conexión</div>';
+  }
+}
+
+function renderLista(lista) {
+  document.getElementById('total-badge').textContent=lista.length;
+  const el=document.getElementById('lista-expedientes');
+  if(!lista.length){el.innerHTML='<div class="loading">Sin expedientes</div>';return}
+  el.innerHTML=lista.map(e=>{
+    const st=e['Estatus']||'Pendiente revisión';
+    const sc=SC[st]||SC['Pendiente revisión'];
+    return `<div class="exp-item ${e['Ticket']===ticketActivo?'active':''}" onclick="abrirExpediente('${e['Ticket']}')">
+      <div class="exp-avatar">${(e['Cliente']||'?')[0].toUpperCase()}</div>
+      <div class="exp-info">
+        <div class="exp-nombre">${e['Cliente']||'Sin nombre'}</div>
+        <div class="exp-ticket">${e['Ticket']}</div>
+        <span class="exp-badge" style="background:${sc.bg};color:${sc.c}">${st}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarExpedientes() {
+  const q=document.getElementById('search-input').value.toLowerCase();
+  renderLista(expedientes.filter(e=>(e['Cliente']||'').toLowerCase().includes(q)||(e['Ticket']||'').toLowerCase().includes(q)));
+}
+
+// ── DETALLE ────────────────────────────────────────────────────
+async function abrirExpediente(ticket) {
+  ticketActivo=ticket;
+  filtrarExpedientes();
+  document.getElementById('detail-panel').innerHTML='<div class="loading"><div class="spinner"></div>Cargando…</div>';
+  const [expD, finD] = await Promise.all([api('getExpediente',{ticket}), api('getResumenFinanciero',{ticket})]);
+  if(expD.error){toast('Error: '+expD.error);return}
+  renderDetalle(expD.expediente, finD);
+}
+
+function renderDetalle(exp, fin) {
+  const ticket  = exp['Ticket'];
+  const nombre  = exp['Cliente']||'Sin nombre';
+  const wa      = exp['WhatsApp']||'';
+  const estatus = exp['Estatus']||'Pendiente revisión';
+  const pasoAct = exp['Paso Actual']||'';
+  const notas   = exp['Notas']||'';
+  const anticipo= exp['Anticipo Confirmado']==='Sí'||exp['Anticipo Confirmado']===true;
+  const entrega = exp['Entrega Confirmada']==='Sí'||exp['Entrega Confirmada']===true;
+  const linkForm= exp['Link Form Corrección']||'';
+  const sc      = SC[estatus]||SC['Pendiente revisión'];
+  const pasoIdx = PASOS.indexOf(pasoAct);
+  const faltantes=REQUISITOS.filter(r=>exp['FALTA: '+r]===true||exp['FALTA: '+r]==='TRUE');
+  const pagos   = fin.pagos||[];
+  const gastos  = fin.gastos||[];
+  const netaCls = fin.gananciaNeta>0?'c-pos':fin.gananciaNeta<0?'c-neg':'c-neu';
+  const netaBg  = fin.gananciaNeta>0?'#D4EDDA':fin.gananciaNeta<0?'#F8D7DA':'#F4F3EF';
+
+  document.getElementById('detail-panel').innerHTML = `
+
+    <!-- HEADER -->
+    <div class="dh">
+      <div class="dh-left">
+        <h2>${nombre}</h2>
+        <p>${ticket} · ${exp['Fecha Ingreso']||'—'}</p>
+      </div>
+      <div class="dh-actions">
+        ${wa
+          ?`<a class="btn btn-wa" href="https://wa.me/${wa}" target="_blank">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a9 9 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+              WhatsApp
+            </a>`
+          :`<button class="btn btn-outline" onclick="document.getElementById('wa-box-${ticket}').style.display='block'">+ WhatsApp</button>`
+        }
+        <button class="btn btn-navy" onclick="guardarNotas('${ticket}')">Guardar notas</button>
+      </div>
+    </div>
+
+    ${anticipo?`<div class="op-banner">✅ Expediente en operación — Anticipo confirmado</div>`:''}
+
+    <!-- WA BOX -->
+    ${!wa?`<div class="wa-box" id="wa-box-${ticket}" style="display:none">
+      <div class="card-title">Número WhatsApp del cliente</div>
+      <div class="inp-row">
+        <input class="inp" id="wa-inp-${ticket}" placeholder="502XXXXXXXX" type="tel">
+        <button class="btn btn-navy" onclick="guardarWA('${ticket}')">Guardar</button>
+      </div>
+    </div>`:''}
+
+    <!-- FILA 1: Estatus+Financiero | Pasos -->
+    <div class="row2">
+
+      <!-- ESTATUS + RESUMEN FINANCIERO -->
+      <div class="card">
+        <div class="card-title">Estatus del expediente</div>
+        <span class="status-badge" style="background:${sc.bg};color:${sc.c}">
+          <span class="status-dot" style="background:${sc.d}"></span>${estatus}
+        </span>
+        <select class="status-select" onchange="cambiarEstatus('${ticket}',this.value)">
+          <option value="">— Cambiar estatus —</option>
+          <option>Pendiente revisión</option>
+          <option>Corrección solicitada</option>
+          <option>Documentación completa</option>
+          <option>Expediente en operación</option>
+          <option>En trámite</option>
+          <option>Entregado</option>
+        </select>
+        <div class="divider"></div>
+        <div class="card-title">Resumen financiero</div>
+        <div class="fin-row">
+          <div class="fin-box">
+            <div class="fin-lbl">Ingresos</div>
+            <div class="fin-val c-pos">Q ${(fin.totalIngresos||0).toFixed(2)}</div>
+          </div>
+          <div class="fin-box">
+            <div class="fin-lbl">Gastos</div>
+            <div class="fin-val c-neg">Q ${(fin.totalGastos||0).toFixed(2)}</div>
+          </div>
+          <div class="fin-box full" style="background:${(fin.gananciaNeta||0)>=0?'#D4EDDA':'#F8D7DA'}">
+            <div class="fin-lbl">Ganancia neta</div>
+            <div class="fin-val ${netaCls}">Q ${(fin.gananciaNeta||0).toFixed(2)}</div>
+          </div>
+        </div>
+        <div style="margin-top:0.75rem">
+          <button class="btn btn-outline btn-sm" onclick="exportarXLS('${ticket}')">⬇ Exportar XLS para contador</button>
+        </div>
+      </div>
+
+      <!-- PASOS -->
+      <div class="card">
+        <div class="card-title">Pasos del trámite</div>
+        ${PASOS.map((p,i)=>{
+          const e=i<pasoIdx?'done':i===pasoIdx?'curr':'pend';
+          return `<div class="paso-item" onclick="avanzarPaso('${ticket}',${i})">
+            <div class="paso-num ${e}">${i<pasoIdx?'✓':i+1}</div>
+            <div class="paso-lbl ${e}">${p}</div>
+            ${i===pasoIdx?'<span style="font-size:0.65rem;color:var(--navy);font-weight:600">◀</span>':''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- FILA 2: Pagos (anticipo + entrega) -->
+    <div class="card">
+      <div class="card-title">Pagos</div>
+      <div class="row2">
+        <!-- Anticipo -->
+        <div>
+          <div class="pago-row">
+            <div>
+              <div class="pago-lbl">Anticipo</div>
+              <div class="pago-sub mono">Q ${(fin.totalAnticipo||0).toFixed(2)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.4rem">
+              <span class="pago-badge ${anticipo?'pago-si':'pago-no'}">${anticipo?'✓ Confirmado':'Pendiente'}</span>
+              <button class="btn btn-green btn-sm" onclick="toggleForm('ant-${ticket}')">+ Agregar</button>
+            </div>
+          </div>
+          <div id="ant-${ticket}" style="display:none" class="inp-row">
+            <input class="inp" id="mant-${ticket}" placeholder="Monto Q" type="number" min="0" step="0.01">
+            <button class="btn btn-green btn-sm" onclick="registrarAnticipo('${ticket}')">Guardar</button>
+          </div>
+          ${pagos.filter(p=>p['Tipo']==='Anticipo').length?`<ul class="pago-hist">${pagos.filter(p=>p['Tipo']==='Anticipo').map(p=>`<li><span>${p['Fecha']}</span><span class="mono">Q ${parseFloat(p['Monto (Q)']).toFixed(2)}</span></li>`).join('')}</ul>`:''}
+        </div>
+        <!-- Contra entrega -->
+        <div>
+          <div class="pago-row">
+            <div>
+              <div class="pago-lbl">Pago contra entrega</div>
+              <div class="pago-sub mono">Q ${(fin.totalEntrega||0).toFixed(2)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.4rem">
+              <span class="pago-badge ${entrega?'pago-si':'pago-no'}">${entrega?'✓ Confirmado':'Pendiente'}</span>
+              ${!entrega?`<button class="btn btn-gold btn-sm" onclick="toggleForm('ent-${ticket}')">Confirmar</button>`:''}
+            </div>
+          </div>
+          <div id="ent-${ticket}" style="display:none" class="inp-row">
+            <input class="inp" id="ment-${ticket}" placeholder="Monto Q" type="number" min="0" step="0.01">
+            <button class="btn btn-gold btn-sm" onclick="registrarEntrega('${ticket}')">Confirmar → Cerrar</button>
+          </div>
+          ${pagos.filter(p=>p['Tipo']==='Contra entrega').length?`<ul class="pago-hist">${pagos.filter(p=>p['Tipo']==='Contra entrega').map(p=>`<li><span>${p['Fecha']}</span><span class="mono">Q ${parseFloat(p['Monto (Q)']).toFixed(2)}</span></li>`).join('')}</ul>`:''}
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 3: Ingresos y Gastos juntos -->
+    <div class="ig-grid">
+      <!-- GASTOS -->
+      <div class="card">
+        <div class="card-title">Registrar gasto</div>
+        <div class="inp-row">
+          <select class="inp" id="tgasto-${ticket}">${TIPOS_GASTO.map(t=>`<option>${t}</option>`).join('')}</select>
+          <input class="inp" id="mgasto-${ticket}" placeholder="Q" type="number" min="0" step="0.01" style="max-width:90px">
+          <button class="btn btn-red btn-sm" onclick="agregarGasto('${ticket}')">+ Agregar</button>
+        </div>
+        ${gastos.length?`<ul class="ig-list" style="margin-top:0.75rem">${gastos.map(g=>`<li><span>${g['Descripción']}<br><span style="color:var(--muted);font-size:0.68rem">${g['Fecha']}</span></span><span class="mono">Q ${parseFloat(g['Monto (Q)']).toFixed(2)}</span></li>`).join('')}</ul>`:`<p style="font-size:0.78rem;color:var(--muted);margin-top:0.6rem">Sin gastos</p>`}
+      </div>
+      <!-- DASHBOARD DOCUMENTOS -->
+      <div class="card">
+        <div class="card-title">Documentos del expediente</div>
+        <div class="docs-panel">
+          <div class="docs-coming">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            <span>Vista de miniaturas</span>
+            <span style="font-size:0.7rem">Próximamente — conexión con Drive</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 4: Documentos faltantes -->
+    <div class="card">
+      <div class="card-title">Documentos — marcar faltantes</div>
+      <ul class="req-list" id="req-${ticket}">
+        ${REQUISITOS.map(r=>{
+          const f=faltantes.includes(r);
+          return `<li class="req-item"><input type="checkbox" class="req-check" ${f?'checked':''}><span class="req-lbl ${f?'falta':''}">${r}</span></li>`;
+        }).join('')}
+      </ul>
+      <div style="margin-top:0.875rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button class="btn btn-red" onclick="generarFormCorreccion('${ticket}')">Generar form de corrección</button>
+        ${linkForm?`<a class="btn btn-outline" href="${linkForm}" target="_blank">Ver form generado</a>`:''}
+      </div>
+    </div>
+
+    <!-- FILA 5: Notas -->
+    <div class="card">
+      <div class="card-title">Notas internas del equipo</div>
+      <textarea class="notas-area" id="notas-${ticket}" placeholder="Anotaciones internas…">${notas}</textarea>
+    </div>
+  `;
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+function toggleForm(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'flex':'none';}
+
+// ── ACCIONES ───────────────────────────────────────────────────
+async function cambiarEstatus(ticket,estatus){
+  if(!estatus)return;
+  await api('updateEstatus',{ticket,estatus});
+  toast('Estatus actualizado');
+  await cargarExpedientes();
+  abrirExpediente(ticket);
+}
+async function avanzarPaso(ticket,idx){
+  await api('updatePaso',{ticket,paso:PASOS[idx]});
+  toast('Paso: '+PASOS[idx]);
+  abrirExpediente(ticket);
+}
+async function guardarNotas(ticket){
+  const n=document.getElementById('notas-'+ticket)?.value||'';
+  await api('updateNotas',{ticket,notas:n});
+  toast('Notas guardadas');
+}
+async function guardarWA(ticket){
+  const n=document.getElementById('wa-inp-'+ticket)?.value.trim();
+  if(!n){toast('Ingresa el número');return}
+  await api('agregarWhatsApp',{ticket,whatsapp:n});
+  toast('WhatsApp guardado');
+  await cargarExpedientes();
+  abrirExpediente(ticket);
+}
+async function registrarAnticipo(ticket){
+  const m=document.getElementById('mant-'+ticket)?.value;
+  if(!m||m<=0){toast('Ingresa el monto');return}
+  await api('agregarPago',{ticket,tipo:'Anticipo',monto:m});
+  toast('Anticipo registrado');
+  await cargarExpedientes();
+  abrirExpediente(ticket);
+}
+async function registrarEntrega(ticket){
+  const m=document.getElementById('ment-'+ticket)?.value;
+  if(!m||m<=0){toast('Ingresa el monto');return}
+  if(!confirm('¿Confirmar pago contra entrega? Esto cerrará el expediente como Entregado.'))return;
+  await api('confirmarEntrega',{ticket,monto:m});
+  toast('Expediente entregado y cerrado');
+  await cargarExpedientes();
+  abrirExpediente(ticket);
+}
+async function agregarGasto(ticket){
+  const d=document.getElementById('tgasto-'+ticket)?.value;
+  const m=document.getElementById('mgasto-'+ticket)?.value;
+  if(!m||m<=0){toast('Ingresa el monto');return}
+  await api('agregarGasto',{ticket,descripcion:d,monto:m});
+  toast('Gasto registrado');
+  abrirExpediente(ticket);
+}
+async function generarFormCorreccion(ticket){
+  const checks=document.querySelectorAll(`#req-${ticket} input[type=checkbox]`);
+  const faltantes=[];
+  checks.forEach((c,i)=>{if(c.checked)faltantes.push(REQUISITOS[i]);});
+  if(!faltantes.length){toast('No hay documentos marcados');return}
+  await api('marcarFaltantes',{ticket,faltantes});
+  toast('Generando formulario…');
+  const res=await api('generarFormCorr',{ticket});
+  if(res.error){toast('Error: '+res.error);return}
+  toast('✓ Formulario creado');
+  const wa=expedientes.find(e=>e['Ticket']===ticket)?.['WhatsApp'];
+  const msg=encodeURIComponent(`Hola, para continuar con su trámite (Exp. ${ticket}) necesitamos documentación faltante: ${res.formUrl}`);
+  const waUrl=wa?`https://wa.me/${wa}?text=${msg}`:null;
+  const ok=confirm(`Formulario creado para ${res.cliente}.\n\nFaltantes:\n${res.faltantes.map(f=>'• '+f).join('\n')}\n\nLink: ${res.formUrl}\n\n${waUrl?'¿Abrir WhatsApp del cliente?':'Agrega el WhatsApp del cliente.'}`);
+  if(ok&&waUrl)window.open(waUrl,'_blank');
+  abrirExpediente(ticket);
+}
+function exportarXLS(ticket){
+  const exp=expedientes.find(e=>e['Ticket']===ticket);
+  const nombre=exp?exp['Cliente']:ticket;
+  api('getResumenFinanciero',{ticket}).then(fin=>{
+    let csv=`IURECO — RESUMEN FINANCIERO\nExpediente:,${ticket}\nCliente:,${nombre}\n\n`;
+    csv+=`INGRESOS\nTipo,Monto (Q),Fecha\n`;
+    (fin.pagos||[]).forEach(p=>{csv+=`${p['Tipo']},${p['Monto (Q)']},${p['Fecha']}\n`;});
+    csv+=`TOTAL INGRESOS,${(fin.totalIngresos||0).toFixed(2)}\n\n`;
+    csv+=`GASTOS\nDescripción,Monto (Q),Fecha\n`;
+    (fin.gastos||[]).forEach(g=>{csv+=`${g['Descripción']},${g['Monto (Q)']},${g['Fecha']}\n`;});
+    csv+=`TOTAL GASTOS,${(fin.totalGastos||0).toFixed(2)}\n\nGANANCIA NETA,${(fin.gananciaNeta||0).toFixed(2)}\n`;
+    const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`IureCo_${ticket}_${nombre}.csv`;a.click();
+    URL.revokeObjectURL(url);
+    toast('Archivo descargado');
+  });
+}
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+cargarExpedientes();
+</script>
+</body>
+</html>
